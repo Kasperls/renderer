@@ -58,30 +58,9 @@ pub async fn load_model(
     let mut materials = Vec::new();
     for m in obj_materials? {
         let diffuse_texture = load_texture(&m.diffuse_texture, device, queue).await?;
-        let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: wgpu::BindingResource::TextureView(
-                        &diffuse_texture.view,
-                    ),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 1,
-                    resource: wgpu::BindingResource::Sampler(
-                        &diffuse_texture.sampler,
-                    ),
-                },
-            ],
-            label: Some(&format!("{} bind group", m.name)),
-        });
+        let normal_texture = load_texture(&m.normal_texture, device, queue).await?;
 
-        materials.push(model::Material {
-            name: m.name,
-            diffuse_texture,
-            bind_group,
-        });
+        materials.push(model::Material::new(device, &m.name, diffuse_texture, normal_texture, layout));
     }
     
     let meshes = models
