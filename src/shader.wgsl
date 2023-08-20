@@ -57,10 +57,6 @@ fn vs_main(
 var t_diffuse: texture_2d<f32>;
 @group(0)@binding(1)
 var s_diffuse: sampler;
-@group(0)@binding(2)
-var t_normal: texture_2d<f32>;
-@group(0) @binding(3)
-var s_normal: sampler;
 
 struct LightUniform {
     @location(0) ambient_color: vec4<f32>,
@@ -75,14 +71,11 @@ var<uniform> light_uniform: LightUniform;
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> { 
     var object_color: vec4<f32>;
     object_color = textureSample(t_diffuse, s_diffuse, in.tex_coords);
-    var object_normal: vec4<f32>;
-    object_normal = textureSample(t_normal, s_normal, in.tex_coords);
 
     var light: vec4<f32>;
     light = light_uniform.ambient_color;
 
     // var light_dir: vec3<f32> = (camera.view_proj * in.model_matrix * vec4(normalize(light_uniform.diffuse_pos - in.clip_position.xyz), 1.0)).xyz;
-    var tangent_normal = object_normal.xyz * 2.0 - 1.0; //not in use yet
     var light_dir: vec3<f32> = normalize(light_uniform.diffuse_pos);
     var diffuse: f32 = max(dot(in.normal, light_dir), 0.0);
     light += vec4<f32>(light_uniform.diffuse_color) * diffuse;

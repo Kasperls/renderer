@@ -54,13 +54,11 @@ pub async fn load_model(
         },
     ).await?;
 
-
     let mut materials = Vec::new();
     for m in obj_materials? {
         let diffuse_texture = load_texture(&m.diffuse_texture, device, queue).await?;
-        let normal_texture = load_texture(&m.normal_texture, device, queue).await?;
 
-        materials.push(model::Material::new(device, &m.name, diffuse_texture, normal_texture, layout));
+        materials.push(model::Material::new(device, &m.name, diffuse_texture, layout));
     }
     
     let meshes = models
@@ -100,7 +98,6 @@ pub async fn load_model(
                     usage: wgpu::BufferUsages::INDEX,
                 }
             );
-
             model::Mesh {
                 name: file_name.to_string(),
                 vertex_buffer,
