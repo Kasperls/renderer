@@ -1,29 +1,40 @@
-
 #[repr(C)]
 #[derive(Copy, Clone, Debug)]
 pub struct LightUniform {
-    pub ambient_light: cgmath::Vector4<f32>,
-    pub diffuse_light: cgmath::Vector4<f32>,
-    pub diffuse_light_pos: cgmath::Vector4<f32>,
-    pub diffuse_light_world_pos: cgmath::Vector4<f32>,
+    pub color: cgmath::Vector4<f32>,
+    pub pos: cgmath::Vector4<f32>,
+    pub target: cgmath::Point3<f32>,
 }
 
 impl LightUniform {
-    pub fn new() -> Self {
+    pub fn new(color: Vector3<f32>, pos: Vector3<f32>, target: cgmath::Point3<f32>) -> Self {
         Self {
-            ambient_light: (0.01, 0.01, 0.01, 1.0).into(),
-            diffuse_light: (0.7, 0.7, 0.7, 1.0).into(),
-            diffuse_light_pos: (-4.0, 4.0, 4.0, 1.0).into(),
-            // original position / not updated by player movement
-            diffuse_light_world_pos: (0.0, 4.0, 0.0, 1.0).into(),
+            color: color.extend(1.0),
+            pos: pos.extend(1.0),
+            target,
         }
     }
 
     pub fn to_raw(&self) -> LightUniformRaw {
         LightUniformRaw {
-            ambient_light: self.ambient_light.into(),
-            diffuse_light: self.diffuse_light.into(),
-            diffuse_light_pos: self.diffuse_light_pos.into(),
+            color: self.color.into(),
+            pos: self.pos.into(),
+            view_proj: {
+                let light_view = cgmath::Matrix4::look_at_rh(
+                    Point3::from_vec(self.pos.truncate()),
+                    self.target, 
+                    Vector3::unit_y(),
+                );
+                let light_proj = cgmath::perspective(
+                    Rad(std::f32::consts::PI/2.), 
+                    1.0, 
+                    0.1, 
+                    100.0
+                );
+                let view_proj = crate::OPENGL_TO_WGPU_MATRIX * light_proj * light_view;
+                view_proj.into()
+
+            },
         }
     }
 
@@ -64,7 +75,37 @@ impl LightUniform {
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct LightUniformRaw {
-    pub ambient_light: [f32; 4],
-    pub diffuse_light: [f32; 4],
-    pub diffuse_light_pos: [f32; 4],
+    pub color: [f32; 4],
+    pub pos: [f32; 4],
+    pub view_proj: [[f32; 4]; 4],
+}
+
+use cgmath::{Rad, Vector3, Point3, EuclideanSpace};
+use wgpu::SurfaceConfiguration;
+
+use crate::model::Mesh;
+use crate::object::{Object, InstanceRaw};
+
+pub trait LoadObjectVertexData<'a> {
+    fn load_mesh_instanced(&mut self, mesh: &'a Mesh, instances: std::ops::Range<u32>);
+    fn load_object_instanced(&mut self, object: &'a Object, instance_buffer: &'a wgpu::Buffer);
+}
+impl <'a, 'b> LoadObjectVertexData<'b> for wgpu::RenderPass<'a>
+where
+    'b: 'a,
+{
+    fn load_mesh_instanced(&mut self, mesh: &'b Mesh, instances: std::ops::Range<u32>, ) {
+        self.set_vertex_buffer(0, mesh.vertex_buffer.slice(..));
+        self.set_index_buffer(mesh.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
+        self.draw_indexed(0..mesh.num_elements, 0, instances);
+    }
+    fn load_object_instanced(&mut self, object: &'b Object, instance_buffer: &'b wgpu::Buffer) {
+        // let instances = 0..object.meshes.len() as u32;
+        let instances = instance_buffer.size() / std::mem::size_of::<InstanceRaw>() as u64;
+        self.set_vertex_buffer(1, instance_buffer.slice(..));
+
+        for mesh in &object.meshes {
+            self.load_mesh_instanced(mesh, 0..instances as u32);
+        }
+    }
 }

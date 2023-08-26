@@ -1,10 +1,12 @@
 use crate::texture;
+use crate::object::Object;
+// delete?
 
 pub trait DrawModel<'a> {
     fn draw_mesh(&mut self, mesh: &'a Mesh, material: &'a Material, camera_bind_group: &'a wgpu::BindGroup);
     fn draw_mesh_instanced(&mut self, mesh: &'a Mesh, material: &'a Material, instances: std::ops::Range<u32>, camera_bind_group: &'a wgpu::BindGroup);
-    fn draw_model(&mut self, model: &'a Model, camera_bind_group: &'a wgpu::BindGroup);
-    fn draw_model_instanced(&mut self, model: &'a Model, instances: std::ops::Range<u32>, camera_bind_group: &'a wgpu::BindGroup);
+    fn draw_model(&mut self, model: &'a Object, camera_bind_group: &'a wgpu::BindGroup);
+    fn draw_model_instanced(&mut self, model: &'a Object, instances: std::ops::Range<u32>, camera_bind_group: &'a wgpu::BindGroup);
 }
 
 impl <'a, 'b> DrawModel<'b> for wgpu::RenderPass<'a>
@@ -23,11 +25,11 @@ where
         self.draw_indexed(0..mesh.num_elements, 0, instances);
     }
 
-    fn draw_model(&mut self, model: &'b Model, camera_bind_group: &'b wgpu::BindGroup) {
+    fn draw_model(&mut self, model: &'b Object, camera_bind_group: &'b wgpu::BindGroup) {
         self.draw_model_instanced(model, 0..1, camera_bind_group);
     }
 
-    fn draw_model_instanced(&mut self, model: &'b Model, instances: std::ops::Range<u32>, camera_bind_group: &'b wgpu::BindGroup) {
+    fn draw_model_instanced(&mut self, model: &'b Object, instances: std::ops::Range<u32>, camera_bind_group: &'b wgpu::BindGroup) {
         for mesh in &model.meshes {
             let material = &model.materials[mesh.material];
             self.draw_mesh_instanced(mesh, material, instances.clone(), camera_bind_group);
@@ -45,6 +47,7 @@ pub struct ModelVertex {
     pub position: [f32; 3],
     pub tex_coords: [f32; 2],
     pub normal: [f32; 3],
+    pub depth: f32, // remove later
 }
 
 impl Vertex for ModelVertex {
@@ -69,14 +72,14 @@ impl Vertex for ModelVertex {
                     shader_location: 2,
                     format: wgpu::VertexFormat::Float32x3,
                 },
+                wgpu::VertexAttribute {
+                    offset: mem::size_of::<[f32; 8]>() as wgpu::BufferAddress,
+                    shader_location: 3,
+                    format: wgpu::VertexFormat::Float32,
+                }
             ],
         }
     }
-}
-
-pub struct Model {
-    pub meshes: Vec<Mesh>,
-    pub materials: Vec<Material>,
 }
 
 pub struct Material {

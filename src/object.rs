@@ -1,15 +1,221 @@
-use cgmath::Vector3;
+use cgmath::{prelude::*, Vector3};
+use wgpu::util::DeviceExt;
+use crate::{model::Material, model::{Mesh, self}};
 
-pub struct _ObjectHandler {
+
+const MAP1: [[[u8; 8]; 8]; 8] = [
+    [
+        [1, 1, 1, 1, 1, 1, 1, 1], 
+        [1, 1, 1, 1, 1, 1, 1, 1], 
+        [1, 1, 1, 1, 1, 1, 1, 1], 
+        [1, 1, 1, 1, 1, 1, 1, 1], 
+        [1, 1, 1, 1, 1, 1, 1, 1], 
+        [1, 1, 1, 1, 1, 1, 1, 1], 
+        [1, 1, 1, 1, 1, 1, 1, 1], 
+        [1, 1, 1, 1, 1, 1, 1, 1]
+    ],[
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0]
+    ],[
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0]
+    ],[
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0]
+    ],[
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0]
+    ],[
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0]
+    ],[
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0]
+    ],[
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0]
+    ], 
+];
+
+const MAP2: [[[u8; 8]; 8]; 8] = [
+    [
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0]
+    ],[
+        [1, 0, 0, 1, 1, 0, 0, 1], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [1, 0, 0, 1, 1, 0, 0, 1]
+    ],[
+        [1, 0, 0, 1, 1, 0, 0, 1], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [1, 0, 0, 1, 1, 0, 0, 1]
+    ],[
+        [1, 0, 0, 1, 1, 0, 0, 1], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [1, 0, 0, 1, 1, 0, 0, 1]
+    ],[
+        [1, 0, 0, 1, 1, 0, 0, 1], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [1, 0, 0, 1, 1, 0, 0, 1]
+    ],[
+        [1, 0, 0, 1, 1, 0, 0, 1], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [1, 0, 0, 1, 1, 0, 0, 1]
+    ],[
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0]
+    ],[
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0]
+    ],
+    
+];
+
+pub struct ObjectHandler {
     pub object: Object,
-    pub instance_buffer: wgpu::Buffer,
-    instances: Vec<Instance>,
+    // pub instance_buffer: wgpu::Buffer,
+    instances: Vec<InstanceRaw>,
     pub positions: Vec<Vector3<f32>>,
 }
 
+impl ObjectHandler {
+    pub fn new(object: Object, map: u8) -> Self {
+        let mut object_handler = Self {
+            object,
+            instances: vec![],
+            positions: vec![],
+        };
+        if map == 1 {
+            object_handler.read_position_data(MAP1);
+        }
+        if map == 2 {
+            object_handler.read_position_data(MAP2);
+        }
+        object_handler.create_instances();
+        object_handler
+    }
+
+
+    pub fn create_instance_buffer(&self, device: &wgpu::Device) -> wgpu::Buffer {
+        device.create_buffer_init(
+            &wgpu::util::BufferInitDescriptor {
+                label: Some("Instance Buffer"),
+                contents: bytemuck::cast_slice(&self.instances),
+                usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
+            }
+        )
+    }
+
+    fn create_instances(&mut self) {
+        for position in &self.positions {
+            self.instances.push(Instance {
+                position: *position,
+                rotation: cgmath::Quaternion::one(),
+            }.to_raw());
+        }
+    }
+
+    fn read_position_data(&mut self, object_array: [[[u8; 8]; 8]; 8]) {
+        for x in 0..8 {
+            for y in 0..8 {
+                for z in 0..8 {
+                    if object_array[x][y][z] == 1 {
+                        self.positions.push(Vector3::new(z as f32 * 2.0, x as f32 * 2.0, y as f32 * 2.0));
+                    }
+                }
+            }
+        }
+    }
+}
+
 pub struct Object {
-    pub meshes: Vec<Mesh>,
-    pub materials: Vec<Material>,
+    pub meshes: Vec<model::Mesh>,
+    pub materials: Vec<model::Material>,
 }
 
 pub struct Instance {
@@ -18,8 +224,8 @@ pub struct Instance {
 }
 
 impl Instance {
-    pub fn to_raw(&self) -> InstaceRaw {
-        InstaceRaw {
+    pub fn to_raw(&self) -> InstanceRaw {
+        InstanceRaw {
             model: (cgmath::Matrix4::from_translation(self.position) * cgmath::Matrix4::from(self.rotation)).into(),
             normal: cgmath::Matrix3::from(self.rotation).into(),
         }
@@ -28,16 +234,16 @@ impl Instance {
 
 #[repr(C)]
 #[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
-pub struct InstaceRaw {
+pub struct InstanceRaw {
     pub model: [[f32; 4]; 4],
     pub normal: [[f32; 3]; 3],
 }
 
-impl InstaceRaw {
+impl InstanceRaw {
     pub fn desc() -> wgpu::VertexBufferLayout<'static> {
         use std::mem;
         wgpu::VertexBufferLayout {
-            array_stride: mem::size_of::<InstaceRaw>() as wgpu::BufferAddress,
+            array_stride: mem::size_of::<InstanceRaw>() as wgpu::BufferAddress,
             step_mode: wgpu::VertexStepMode::Instance,
             attributes: &[
                 wgpu::VertexAttribute {
@@ -80,10 +286,8 @@ impl InstaceRaw {
     }
 }
 
-use crate::{model::Model, model::Material, model::Mesh};
-
 pub trait DrawObject<'a> {
-    fn new_draw_object_instanced(&mut self, object: &'a Model, instance_buffer: &'a wgpu::Buffer, camera_bind_group: &'a wgpu::BindGroup);
+    fn new_draw_object_instanced(&mut self, object: &'a Object, instance_buffer: &'a wgpu::Buffer, camera_bind_group: &'a wgpu::BindGroup);
     fn new_draw_mesh_instanced(&mut self, mesh: &'a Mesh, material: &'a Material, instances: std::ops::Range<u32>, camera_bind_group: &'a wgpu::BindGroup);
 }
 impl <'a, 'b> DrawObject<'b> for wgpu::RenderPass<'a>
@@ -97,9 +301,9 @@ where
         self.set_bind_group(1, camera_bind_group, &[]);
         self.draw_indexed(0..mesh.num_elements, 0, instances);
     }
-    fn new_draw_object_instanced(&mut self, object: &'b Model, instance_buffer: &'b wgpu::Buffer, camera_bind_group: &'b wgpu::BindGroup) {
+    fn new_draw_object_instanced(&mut self, object: &'b Object, instance_buffer: &'b wgpu::Buffer, camera_bind_group: &'b wgpu::BindGroup) {
         // let instances = 0..object.meshes.len() as u32;
-        let instances = instance_buffer.size() / std::mem::size_of::<InstaceRaw>() as u64;
+        let instances = instance_buffer.size() / std::mem::size_of::<InstanceRaw>() as u64;
         self.set_vertex_buffer(1, instance_buffer.slice(..));
 
         for mesh in &object.meshes {

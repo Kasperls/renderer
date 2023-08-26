@@ -1,3 +1,6 @@
+
+const shadowDepthTextureSize: f32 = 7200.0;
+// https://gpuweb.github.io/gpuweb/wgsl/#texturesamplecompare DOCS!!
 // Vertex shader
 struct InstanceInput {
     @location(5) model_matrix_0: vec4<f32>,
@@ -15,6 +18,12 @@ struct CameraUniform {
 @group(1) @binding(0)
 var<uniform> camera: CameraUniform;
 
+struct Globals {
+    @location(0) global_mx: mat4x4<f32>,
+    @location(1) num_lights: u32,
+}
+@group(3) @binding(0) var<uniform> globals: Globals;
+
 struct VertexInput {
     @location(0) position: vec3<f32>,
     @location(1) tex_coords: vec2<f32>,
@@ -22,9 +31,10 @@ struct VertexInput {
 };
 
 struct VertexOutput {
-    @builtin(position) clip_position: vec4<f32>,
+    @builtin(position) clip_position: vec4<f32>, //proj_pos
     @location(0) tex_coords: vec2<f32>,
-    @location(1) normal: vec3<f32>,
+    @location(1) normal: vec3<f32>, //world_normal
+    @location(4) world_pos: vec4<f32>, //world_pos
 };  
 
 @vertex
@@ -43,44 +53,76 @@ fn vs_main(
         instance.rotation_matrix_1.xyz,
         instance.rotation_matrix_2.xyz,
     );
+
+    let world_pos = (model_matrix * vec4<f32>(model.position, 1.0));
     var out: VertexOutput;
-    // sRGB to linear
-    // out.color = pow(model.color, vec3<f32>(2.4));
+
     out.tex_coords = model.tex_coords;
-    out.clip_position = camera.view_proj * model_matrix * vec4<f32>(model.position, 1.0);
+
     out.normal = normal_matrix * model.normal;
+    out.world_pos = world_pos;
+    out.clip_position = camera.view_proj * world_pos;
+    // out.clip_position = light_uniform.light_matrix * world_pos;
     return out;
 }
-//  Fragment shader
 
+//  Fragment shader
 @group(0) @binding(0)
 var t_diffuse: texture_2d<f32>;
-@group(0)@binding(1)
+@group(0) @binding(1)
 var s_diffuse: sampler;
 
-struct LightUniform {
-    @location(0) ambient_color: vec4<f32>,
-    @location(1) diffuse_color: vec4<f32>,
-    @location(2) diffuse_pos: vec3<f32>,
-};
 
-@group(2) @binding(0)
-var<uniform> light_uniform: LightUniform;
+struct LightUniform {
+    @location(0) color: vec4<f32>,
+    @location(1) position: vec4<f32>,
+    @location(2) light_matrix: mat4x4<f32>,
+};
+@group(2) @binding(0) var<uniform> light_uniform: LightUniform;
+@group(2) @binding(1) var t_depth: texture_depth_2d;
+@group(2) @binding(2) var s_depth: sampler_comparison;
+
+fn fetch_shadow(homogeneous_coords: vec4<f32>, offset: vec2<f32>) -> f32 {
+    if (homogeneous_coords.w <= 0.0) {
+            return 1.0;
+    }
+
+    let flip_correction = vec2<f32>(0.5, -0.5);
+
+    // let proj_correction = 1.0 / homogeneous_coords.w;
+    let proj_cords = homogeneous_coords.xyz / homogeneous_coords.w;
+    let uv = proj_cords.xy * flip_correction + vec2<f32>(0.5, 0.5);
+    // let uv = homogeneous_coords.xy * flip_correction * proj_correction + vec2<f32>(0.5, 0.5);
+    
+    return textureSampleCompareLevel(t_depth, s_depth, uv + offset, proj_cords.z);
+}
 
 @fragment
-fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> { 
+fn fs_main(vertex: VertexOutput) -> @location(0) vec4<f32> { 
     var object_color: vec4<f32>;
-    object_color = textureSample(t_diffuse, s_diffuse, in.tex_coords);
+    object_color = textureSample(t_diffuse, s_diffuse, vertex.tex_coords);
+    
+    let normal = normalize(vertex.normal);
 
-    var light: vec4<f32>;
-    light = light_uniform.ambient_color;
+    var visibility = 0.1;
+    let oneOverShadowDepthTextureSize = 1.0 / shadowDepthTextureSize;
+    for (var y = -1; y <= 1; y++) {
+        for (var x = -1; x <= 1; x++) {
+            let offset = vec2<f32>(vec2(x, y)) * oneOverShadowDepthTextureSize;
 
-    // var light_dir: vec3<f32> = (camera.view_proj * in.model_matrix * vec4(normalize(light_uniform.diffuse_pos - in.clip_position.xyz), 1.0)).xyz;
-    var light_dir: vec3<f32> = normalize(light_uniform.diffuse_pos);
-    var diffuse: f32 = max(dot(in.normal, light_dir), 0.0);
-    light += vec4<f32>(light_uniform.diffuse_color) * diffuse;
+            visibility += fetch_shadow(light_uniform.light_matrix * vertex.world_pos, offset);
+        }
+    }
+    
+    visibility /= 9.0;
 
-    var out = object_color * light;
+    let light_dir = normalize(light_uniform.position.xyz - vertex.world_pos.xyz);
+    let light_color = light_uniform.color;
+    let diffuse = max(dot(normal, light_dir), 0.0);
+    let ambient = 0.1;
+    let diffuse_color = (diffuse + ambient) * light_color * object_color * visibility;
+
+    let out = vec4<f32>(diffuse_color.rgb, 1.0);
     
     return vec4<f32>(out);
 }

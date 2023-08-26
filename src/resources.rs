@@ -1,4 +1,5 @@
-use crate::{model, texture};
+use crate::{model, object, texture};
+use object::Object;
 
 use std::io::{BufReader, Cursor};
 
@@ -36,7 +37,7 @@ pub async fn load_model(
     device: &wgpu::Device,
     queue: &wgpu::Queue,
     layout: &wgpu::BindGroupLayout,
-) -> anyhow::Result<model::Model> {
+) -> anyhow::Result<Object> {
     let obj_text = load_string(file_name).await?;
     let obj_cursor = Cursor::new(obj_text);
     let mut obj_reader = BufReader::new(obj_cursor);
@@ -80,6 +81,7 @@ pub async fn load_model(
                         m.mesh.normals[i * 3 + 1],
                         m.mesh.normals[i * 3 + 2],
                     ],
+                    depth: 1000.0,
                 }
             ).collect::<Vec<_>>();
 
@@ -108,5 +110,5 @@ pub async fn load_model(
         }
     ).collect::<Vec<_>>();
 
-    Ok(model::Model { meshes, materials })
+    Ok(Object { meshes, materials })
 }

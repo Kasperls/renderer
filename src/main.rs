@@ -7,4 +7,4 @@ fn main() {
 }
 
 // current
-// https://sotrh.github.io/learn-wgpu/intermediate/tutorial10-lighting/#the-blinn-phong-model
+// https://web.cs.wpi.edu/~matt/courses/cs563/talks/shadow/shadow.html

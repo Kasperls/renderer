@@ -1,0 +1,22 @@
+"filename", "language", "Rust", "WGSL", "Wavefront (OBJ)", "Wavefront (MTL)", "comment", "blank", "total"
+"c:\Users\kasp9\rust\renderer\build.rs", "Rust", 14, 0, 0, 0, 1, 5, 20
+"c:\Users\kasp9\rust\renderer\res\cube.mtl", "Wavefront (MTL)", 0, 0, 0, 11, 2, 3, 16
+"c:\Users\kasp9\rust\renderer\res\cube.obj", "Wavefront (OBJ)", 0, 0, 931, 0, 3, 2, 936
+"c:\Users\kasp9\rust\renderer\res\cube1.mtl", "Wavefront (MTL)", 0, 0, 0, 10, 2, 2, 14
+"c:\Users\kasp9\rust\renderer\res\cube1.obj", "Wavefront (OBJ)", 0, 0, 38, 0, 2, 1, 41
+"c:\Users\kasp9\rust\renderer\res\cube2.mtl", "Wavefront (MTL)", 0, 0, 0, 10, 2, 2, 14
+"c:\Users\kasp9\rust\renderer\res\cube2.obj", "Wavefront (OBJ)", 0, 0, 38, 0, 2, 1, 41
+"c:\Users\kasp9\rust\renderer\res\models\cube.mtl", "Wavefront (MTL)", 0, 0, 0, 11, 2, 2, 15
+"c:\Users\kasp9\rust\renderer\res\models\cube.obj", "Wavefront (OBJ)", 0, 0, 931, 0, 2, 1, 934
+"c:\Users\kasp9\rust\renderer\src\camera.rs", "Rust", 202, 0, 0, 0, 0, 27, 229
+"c:\Users\kasp9\rust\renderer\src\lib.rs", "Rust", 558, 0, 0, 0, 31, 81, 670
+"c:\Users\kasp9\rust\renderer\src\light.rs", "Rust", 100, 0, 0, 0, 1, 10, 111
+"c:\Users\kasp9\rust\renderer\src\light.wgsl", "WGSL", 0, 49, 0, 0, 0, 10, 59
+"c:\Users\kasp9\rust\renderer\src\main.rs", "Rust", 4, 0, 0, 0, 3, 3, 10
+"c:\Users\kasp9\rust\renderer\src\model.rs", "Rust", 114, 0, 0, 0, 1, 12, 127
+"c:\Users\kasp9\rust\renderer\src\object.rs", "Rust", 324, 0, 0, 0, 3, 18, 345
+"c:\Users\kasp9\rust\renderer\src\resources.rs", "Rust", 99, 0, 0, 0, 0, 15, 114
+"c:\Users\kasp9\rust\renderer\src\shader.wgsl", "WGSL", 0, 98, 0, 0, 6, 24, 128
+"c:\Users\kasp9\rust\renderer\src\shadow.wgsl", "WGSL", 0, 0, 0, 0, 3, 2, 5
+"c:\Users\kasp9\rust\renderer\src\texture.rs", "Rust", 118, 0, 0, 0, 1, 11, 130
+"Total", "-", 1533, 147, 1938, 42, 67, 232, 3959
