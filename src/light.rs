@@ -1,3 +1,32 @@
+pub struct LightContainer {
+    pub index: usize,
+    pub light: LightUniform,
+    pub light_buffer: wgpu::Buffer,
+    pub light_uniform_bind_group: wgpu::BindGroup,
+    pub light_pass: wgpu::RenderPipeline,
+    pub light_depth_texture_view: wgpu::TextureView,
+}
+
+impl LightContainer {
+    fn new(
+        index: usize,
+        light: LightUniform, 
+        light_buffer: wgpu::Buffer, 
+        light_uniform_bind_group: wgpu::BindGroup, 
+        light_pass: wgpu::RenderPipeline, 
+        light_depth_texture_view: wgpu::TextureView,
+    ) -> Self {
+        Self {
+            index,
+            light,
+            light_buffer,
+            light_uniform_bind_group,
+            light_pass,
+            light_depth_texture_view,
+        }
+    }
+}
+
 #[repr(C)]
 #[derive(Copy, Clone, Debug)]
 pub struct LightUniform {

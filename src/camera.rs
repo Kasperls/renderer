@@ -98,6 +98,10 @@ impl CameraController {
                         self.yaw -= Rad(0.1);
                         true
                     }
+                    VirtualKeyCode::Return => {
+                        println!("pos: {:?}", self.pos);
+                        true
+                    }
                     _ => false,
                 }
             },

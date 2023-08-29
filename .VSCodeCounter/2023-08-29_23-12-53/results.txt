@@ -1,0 +1,54 @@
+Date : 2023-08-29 23:12:53
+Directory : c:\Users\kasp9\rust\renderer
+Total : 22 files,  3812 codes, 85 comments, 251 blanks, all 4148 lines
+
+Languages
++-----------------+------------+------------+------------+------------+------------+
+| language        | files      | code       | comment    | blank      | total      |
++-----------------+------------+------------+------------+------------+------------+
+| Wavefront (OBJ) |          5 |      1,982 |         11 |          6 |      1,999 |
+| Rust            |          9 |      1,633 |         48 |        194 |      1,875 |
+| WGSL            |          3 |        145 |         16 |         40 |        201 |
+| Wavefront (MTL) |          5 |         52 |         10 |         11 |         73 |
++-----------------+------------+------------+------------+------------+------------+
+
+Directories
++--------------------------------------------------+------------+------------+------------+------------+------------+
+| path                                             | files      | code       | comment    | blank      | total      |
++--------------------------------------------------+------------+------------+------------+------------+------------+
+| .                                                |         22 |      3,812 |         85 |        251 |      4,148 |
+| . (Files)                                        |          1 |         14 |          1 |          5 |         20 |
+| res                                              |         10 |      2,034 |         21 |         17 |      2,072 |
+| res (Files)                                      |          8 |      1,092 |         17 |         14 |      1,123 |
+| res\models                                       |          2 |        942 |          4 |          3 |        949 |
+| src                                              |         11 |      1,764 |         63 |        229 |      2,056 |
++--------------------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++--------------------------------------------------+-----------------+------------+------------+------------+------------+
+| filename                                         | language        | code       | comment    | blank      | total      |
++--------------------------------------------------+-----------------+------------+------------+------------+------------+
+| c:\Users\kasp9\rust\renderer\build.rs            | Rust            |         14 |          1 |          5 |         20 |
+| c:\Users\kasp9\rust\renderer\res\cube-test.mtl   | Wavefront (MTL) |         10 |          2 |          2 |         14 |
+| c:\Users\kasp9\rust\renderer\res\cube-test.obj   | Wavefront (OBJ) |         44 |          2 |          1 |         47 |
+| c:\Users\kasp9\rust\renderer\res\cube.mtl        | Wavefront (MTL) |         11 |          2 |          3 |         16 |
+| c:\Users\kasp9\rust\renderer\res\cube.obj        | Wavefront (OBJ) |        931 |          3 |          2 |        936 |
+| c:\Users\kasp9\rust\renderer\res\cube1.mtl       | Wavefront (MTL) |         10 |          2 |          2 |         14 |
+| c:\Users\kasp9\rust\renderer\res\cube1.obj       | Wavefront (OBJ) |         38 |          2 |          1 |         41 |
+| c:\Users\kasp9\rust\renderer\res\cube2.mtl       | Wavefront (MTL) |         10 |          2 |          2 |         14 |
+| c:\Users\kasp9\rust\renderer\res\cube2.obj       | Wavefront (OBJ) |         38 |          2 |          1 |         41 |
+| c:\Users\kasp9\rust\renderer\res\models\cube.mtl | Wavefront (MTL) |         11 |          2 |          2 |         15 |
+| c:\Users\kasp9\rust\renderer\res\models\cube.obj | Wavefront (OBJ) |        931 |          2 |          1 |        934 |
+| c:\Users\kasp9\rust\renderer\src\camera.rs       | Rust            |        206 |          0 |         27 |        233 |
+| c:\Users\kasp9\rust\renderer\src\lib.rs          | Rust            |        625 |         38 |         91 |        754 |
+| c:\Users\kasp9\rust\renderer\src\light.rs        | Rust            |        127 |          1 |         12 |        140 |
+| c:\Users\kasp9\rust\renderer\src\light.wgsl      | WGSL            |         49 |          0 |         10 |         59 |
+| c:\Users\kasp9\rust\renderer\src\main.rs         | Rust            |          6 |          3 |          3 |         12 |
+| c:\Users\kasp9\rust\renderer\src\model.rs        | Rust            |        114 |          1 |         12 |        127 |
+| c:\Users\kasp9\rust\renderer\src\object.rs       | Rust            |        324 |          3 |         18 |        345 |
+| c:\Users\kasp9\rust\renderer\src\resources.rs    | Rust            |         99 |          0 |         15 |        114 |
+| c:\Users\kasp9\rust\renderer\src\shader.wgsl     | WGSL            |         96 |         13 |         28 |        137 |
+| c:\Users\kasp9\rust\renderer\src\shadow.wgsl     | WGSL            |          0 |          3 |          2 |          5 |
+| c:\Users\kasp9\rust\renderer\src\texture.rs      | Rust            |        118 |          1 |         11 |        130 |
+| Total                                            |                 |      3,812 |         85 |        251 |      4,148 |
++--------------------------------------------------+-----------------+------------+------------+------------+------------+
