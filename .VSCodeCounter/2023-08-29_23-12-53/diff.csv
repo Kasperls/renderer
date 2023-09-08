@@ -1,0 +1,9 @@
+"filename", "language", "WGSL", "Rust", "Wavefront (OBJ)", "Wavefront (MTL)", "comment", "blank", "total"
+"c:\Users\kasp9\rust\renderer\res\cube-test.mtl", "Wavefront (MTL)", 0, 0, 0, 10, 2, 2, 14
+"c:\Users\kasp9\rust\renderer\res\cube-test.obj", "Wavefront (OBJ)", 0, 0, 44, 0, 2, 1, 47
+"c:\Users\kasp9\rust\renderer\src\camera.rs", "Rust", 0, 4, 0, 0, 0, 0, 4
+"c:\Users\kasp9\rust\renderer\src\lib.rs", "Rust", 0, 67, 0, 0, 7, 10, 84
+"c:\Users\kasp9\rust\renderer\src\light.rs", "Rust", 0, 27, 0, 0, 0, 2, 29
+"c:\Users\kasp9\rust\renderer\src\main.rs", "Rust", 0, 2, 0, 0, 0, 0, 2
+"c:\Users\kasp9\rust\renderer\src\shader.wgsl", "WGSL", -2, 0, 0, 0, 7, 4, 9
+"Total", "-", -2, 100, 44, 10, 18, 19, 189

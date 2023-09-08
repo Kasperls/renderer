@@ -1,6 +1,8 @@
+use cgmath::Vector2;
 use image::GenericImageView;
 use anyhow::*;
 
+// texture struct
 pub struct Texture {
     pub texture: wgpu::Texture,
     pub view: wgpu::TextureView,
@@ -10,10 +12,10 @@ pub struct Texture {
 impl Texture {
     pub const DEPTH_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
 
-    pub fn create_depth_texture(device: &wgpu::Device, config: &wgpu::SurfaceConfiguration, label: &str) -> Self {
+    pub fn create_depth_texture(device: &wgpu::Device, config: &wgpu::SurfaceConfiguration, label: &str, compare: wgpu::CompareFunction, texture_dim: Vector2<f32>) -> Self {
         let size = wgpu::Extent3d {
-            width: config.width,
-            height: config.height,
+            width: texture_dim.x as u32,
+            height: texture_dim.y as u32,
             depth_or_array_layers: 1,
         };
         let desc = wgpu::TextureDescriptor {
@@ -28,17 +30,27 @@ impl Texture {
         };
         let texture = device.create_texture(&desc);
 
-        let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+        let view = texture.create_view(&wgpu::TextureViewDescriptor {
+            label: Some(label),
+            format: Some(Self::DEPTH_FORMAT),
+            dimension: Some(wgpu::TextureViewDimension::D2),
+            aspect: wgpu::TextureAspect::All,
+            base_mip_level: 0,
+            mip_level_count: None,
+            base_array_layer: 0,
+            array_layer_count: None,
+        });
+        
         let sampler = device.create_sampler(
             &wgpu::SamplerDescriptor {
-                label: Some("Depth Sampler"),
+                label: Some("sDepth Sampler"),
                 address_mode_u: wgpu::AddressMode::ClampToEdge,
                 address_mode_v: wgpu::AddressMode::ClampToEdge,
                 address_mode_w: wgpu::AddressMode::ClampToEdge,
                 mag_filter: wgpu::FilterMode::Linear,
                 min_filter: wgpu::FilterMode::Nearest,
                 mipmap_filter: wgpu::FilterMode::Nearest,
-                compare: Some(wgpu::CompareFunction::LessEqual),
+                compare: Some(compare),
                 lod_min_clamp: 0.0,
                 lod_max_clamp: 100.0,
                 ..Default::default()
@@ -106,10 +118,15 @@ impl Texture {
                 address_mode_u: wgpu::AddressMode::ClampToEdge,
                 address_mode_v: wgpu::AddressMode::ClampToEdge,
                 address_mode_w: wgpu::AddressMode::ClampToEdge,
-                mag_filter: wgpu::FilterMode::Linear,
+                mag_filter: wgpu::FilterMode::Nearest,
                 min_filter: wgpu::FilterMode::Nearest,
                 mipmap_filter: wgpu::FilterMode::Nearest,
-                ..Default::default()
+                label: None,
+                lod_min_clamp: 0.0,
+                lod_max_clamp: 100.0,
+                compare: None,
+                anisotropy_clamp: 1,
+                border_color: None,
             }
         );
         

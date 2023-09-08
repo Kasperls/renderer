@@ -1,8 +1,10 @@
 use crate::texture;
+use crate::object::Object;
+// delete?
 
 pub trait DrawModel<'a> {
-    fn draw_mesh(&mut self, mesh: &'a Mesh, material: &'a Material, camera_bind_group: &'a wgpu::BindGroup);
-    fn draw_mesh_instanced(&mut self, mesh: &'a Mesh, material: &'a Material, instances: std::ops::Range<u32>, camera_bind_group: &'a wgpu::BindGroup);
+    fn draw_mesh(&mut self, mesh: &'a ModelMesh, material: &'a Material, camera_bind_group: &'a wgpu::BindGroup);
+    fn draw_mesh_instanced(&mut self, mesh: &'a ModelMesh, material: &'a Material, instances: std::ops::Range<u32>, camera_bind_group: &'a wgpu::BindGroup);
     fn draw_model(&mut self, model: &'a Model, camera_bind_group: &'a wgpu::BindGroup);
     fn draw_model_instanced(&mut self, model: &'a Model, instances: std::ops::Range<u32>, camera_bind_group: &'a wgpu::BindGroup);
 }
@@ -11,11 +13,11 @@ impl <'a, 'b> DrawModel<'b> for wgpu::RenderPass<'a>
 where
     'b: 'a,
 {
-    fn draw_mesh(&mut self, mesh: &'b Mesh, material: &'b Material, camera_bind_group: &'b wgpu::BindGroup) {
+    fn draw_mesh(&mut self, mesh: &'b ModelMesh, material: &'b Material, camera_bind_group: &'b wgpu::BindGroup) {
         self.draw_mesh_instanced(mesh, material, 0..1, camera_bind_group);
     }
 
-    fn draw_mesh_instanced(&mut self, mesh: &'b Mesh, material: &'b Material, instances: std::ops::Range<u32>, camera_bind_group: &'b wgpu::BindGroup) {
+    fn draw_mesh_instanced(&mut self, mesh: &'b ModelMesh, material: &'b Material, instances: std::ops::Range<u32>, camera_bind_group: &'b wgpu::BindGroup) {
         self.set_vertex_buffer(0, mesh.vertex_buffer.slice(..));
         self.set_index_buffer(mesh.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
         self.set_bind_group(0, &material.bind_group, &[]);
@@ -39,12 +41,18 @@ pub trait Vertex {
     fn desc<>() -> wgpu::VertexBufferLayout<'static>;
 }
 
+pub struct Model {
+    pub meshes: Vec<ModelMesh>,
+    pub materials: Vec<Material>,
+}
+
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct ModelVertex {
     pub position: [f32; 3],
     pub tex_coords: [f32; 2],
     pub normal: [f32; 3],
+    pub depth: f32, // remove later
 }
 
 impl Vertex for ModelVertex {
@@ -69,20 +77,19 @@ impl Vertex for ModelVertex {
                     shader_location: 2,
                     format: wgpu::VertexFormat::Float32x3,
                 },
+                wgpu::VertexAttribute {
+                    offset: mem::size_of::<[f32; 8]>() as wgpu::BufferAddress,
+                    shader_location: 3,
+                    format: wgpu::VertexFormat::Float32,
+                }
             ],
         }
     }
 }
 
-pub struct Model {
-    pub meshes: Vec<Mesh>,
-    pub materials: Vec<Material>,
-}
-
 pub struct Material {
     pub name: String,
     pub diffuse_texture: texture::Texture,
-    pub normal_texture: texture::Texture,
     pub bind_group: wgpu::BindGroup,
 }
 
@@ -91,7 +98,6 @@ impl Material {
         device: &wgpu::Device,
         name: &str,
         diffuse_texture: texture::Texture,
-        normal_texture: texture::Texture,
         layout: &wgpu::BindGroupLayout,
     ) -> Self {
         let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
@@ -105,14 +111,6 @@ impl Material {
                     binding: 1,
                     resource: wgpu::BindingResource::Sampler(&diffuse_texture.sampler),
                 },
-                wgpu::BindGroupEntry {
-                    binding: 2,
-                    resource: wgpu::BindingResource::TextureView(&normal_texture.view),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 3,
-                    resource: wgpu::BindingResource::Sampler(&normal_texture.sampler),
-                },
             ],
             label: Some(name),
         });
@@ -120,13 +118,12 @@ impl Material {
         Self {
             name: String::from(name),
             diffuse_texture,
-            normal_texture, // NEW!
             bind_group,
         }
     }
 }
 
-pub struct Mesh {
+pub struct ModelMesh {
     pub name: String,
     pub vertex_buffer: wgpu::Buffer,
     pub index_buffer: wgpu::Buffer,
