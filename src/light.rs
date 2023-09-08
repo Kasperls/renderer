@@ -1,3 +1,5 @@
+use crate::object::Mesh;
+
 pub struct LightContainer {
     pub index: usize,
     pub light: LightUniform,
@@ -110,9 +112,7 @@ pub struct LightUniformRaw {
 }
 
 use cgmath::{Rad, Vector3, Point3, EuclideanSpace};
-use wgpu::SurfaceConfiguration;
 
-use crate::model::Mesh;
 use crate::object::{Object, InstanceRaw};
 
 pub trait LoadObjectVertexData<'a> {

@@ -10,13 +10,13 @@ struct InstanceInput {
     @location(9) rotation_matrix_0: vec4<f32>,
     @location(10) rotation_matrix_1: vec4<f32>,
     @location(11) rotation_matrix_2: vec4<f32>,
+    @location(12) texture_rect: vec4<u32>,
 };
 
 struct CameraUniform {
     view_proj: mat4x4<f32>,
 };
-@group(1) @binding(0)
-var<uniform> camera: CameraUniform;
+@group(1) @binding(0) var<uniform> camera: CameraUniform;
 
 struct Globals {
     @location(0) global_mx: mat4x4<f32>,
@@ -35,6 +35,7 @@ struct VertexOutput {
     @location(0) tex_coords: vec2<f32>,
     @location(1) normal: vec3<f32>, //world_normal
     @location(4) world_pos: vec4<f32>, //world_pos
+    @location(5) texture_rect: vec4<f32>,
 };  
 
 @vertex
@@ -55,15 +56,23 @@ fn vs_main(
     );
 
     let world_pos = (model_matrix * vec4<f32>(model.position, 1.0));
-    var out: VertexOutput;
 
+    var out: VertexOutput;
     out.tex_coords = model.tex_coords;
+    out.texture_rect = vec4<f32>(instance.texture_rect);
 
     out.normal = normal_matrix * model.normal;
     out.world_pos = world_pos;
     out.clip_position = camera.view_proj * world_pos;
-    // out.clip_position = light_uniform[1].light_matrix * world_pos;
-    return out;
+
+    let out1: VertexOutput = VertexOutput(
+        out.clip_position,
+        out.tex_coords,
+        out.normal,
+        out.world_pos,
+        out.texture_rect,
+    );
+    return out1;
 }
 
 //  Fragment shader
@@ -86,7 +95,7 @@ fn fetch_shadow(homogeneous_coords: vec4<f32>, offset: vec2<f32>, index: i32) ->
     if (homogeneous_coords.w <= 0.0) {
             return 1.0;
     }
-
+    
     let flip_correction = vec2<f32>(0.5, -0.5);
 
     // let proj_correction = 1.0 / homogeneous_coords.w;
@@ -97,10 +106,17 @@ fn fetch_shadow(homogeneous_coords: vec4<f32>, offset: vec2<f32>, index: i32) ->
     return textureSampleCompareLevel(t_depth, s_depth, uv + offset, index, proj_cords.z);
 }
 
+fn transform_uv(uv: vec2<f32>, rect: vec4<f32>) -> vec2<f32> {
+    var relative_rect = rect / 16.0 / 24.0;
+    var uv_trans: vec2<f32>;
+    uv_trans = mix(relative_rect.xy, relative_rect.zw, uv);
+    return uv_trans;
+}
+
 @fragment
 fn fs_main(vertex: VertexOutput) -> @location(0) vec4<f32> { 
     var object_color: vec4<f32>;
-    object_color = textureSample(t_diffuse, s_diffuse, vertex.tex_coords);
+    object_color = textureSample(t_diffuse, s_diffuse, transform_uv(vertex.tex_coords, vertex.texture_rect));
     
     let normal = normalize(vertex.normal);
 

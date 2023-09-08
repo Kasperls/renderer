@@ -2,9 +2,10 @@ use std::time::{Duration, Instant};
 use std::vec;
 
 use camera::{Camera, CameraController, CameraUniform};
+use hud::DrawHud;
 use light::{LightUniform, LoadObjectVertexData, LightContainer};
 use model::Vertex;
-use object::{DrawObject, Object, InstanceRaw};
+use object::{DrawObject, Object, InstanceRaw, ObjectHandler};
 use wgpu::{ColorTargetState, DepthStencilState, BindGroupLayoutDescriptor};
 use wgpu::util::DeviceExt;
 use winit::dpi::PhysicalSize;
@@ -13,7 +14,7 @@ use winit::{
     event_loop::{ControlFlow, EventLoop},
     window::{WindowBuilder, Window},
 };
-use cgmath::{Point3, Vector3, Vector2};
+use cgmath::{Point3, Vector3, Vector2, Rotation3};
 
 mod object;
 mod texture;
@@ -21,6 +22,8 @@ mod model;
 mod resources;
 mod camera;
 mod light;
+mod globals;
+mod hud;
 
 const PLAYER_ACCELERAION: f32 = 0.04;
 const WINDOW_DIMENTIONS: (u32, u32) = (1280, 720);
@@ -37,39 +40,9 @@ pub const OPENGL_TO_WGPU_MATRIX: cgmath::Matrix4<f32> = cgmath::Matrix4::new(
     0.0, 0.0, 0.0, 1.0,
 );
 
-struct Globals {
-    global_mx: cgmath::Matrix4<f32>,
-    num_lights: u32,
-}
-
-#[repr(C)]
-#[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
-struct GlobalsRaw {
-    global_mx: [[f32; 4]; 4],
-    num_lights: u32,
-    _padding: [u32; 3],
-}
-
-impl Globals {
-    fn new() -> Self {
-        Self {
-            global_mx: OPENGL_TO_WGPU_MATRIX,
-            num_lights: NUM_LIGHTS as u32,
-        }
-    }
-
-    fn to_raw(&self) -> GlobalsRaw {
-        GlobalsRaw {
-            global_mx: self.global_mx.into(),
-            num_lights: self.num_lights,
-            _padding: [0u32; 3],
-        }
-    }
-}
-
 struct State {
-    obj_handler: object::ObjectHandler,
-    obj_handler1: object::ObjectHandler,
+    hud_container: hud::HudContainer,
+    object_handler: object::ObjectHandler,
     camera: Camera,
     camera_controller: CameraController,
     camera_uniform: CameraUniform,
@@ -78,7 +51,7 @@ struct State {
     globals_bind_group: wgpu::BindGroup,
     lights: Vec<LightContainer>,
     uniform_light_bind_group: wgpu::BindGroup,
-    _uniform_light_buffer: wgpu::Buffer,
+    uniform_light_buffer: wgpu::Buffer,
     surface: wgpu::Surface,
     device: wgpu::Device,
     queue: wgpu::Queue,
@@ -141,18 +114,10 @@ impl State {
         let object_bind_group_layout = Object::get_bind_group_layout(&device);
 
         // Load model
-        let obj_handler = object::ObjectHandler::new(
-            resources::load_model("cube1.obj", &device, &queue, &object_bind_group_layout).await.unwrap(),
-            1
+        let object_handler = object::ObjectHandler::new(
+            resources::load_object("cube_smart.obj", &device, &queue, &object_bind_group_layout).await.unwrap(),
+            ObjectHandler::load_texture_atlas("cube_smart.png", &device, &queue).await.unwrap(),
         );
-
-        let obj_handler1 = object::ObjectHandler::new(
-            resources::load_model("cube2.obj", &device, &queue, &object_bind_group_layout).await.unwrap(),
-            2
-        );
-
-        // let obj_model = resources::load_model("cube1.obj", &device, &queue, &object_bind_group_layout).await.unwrap();
-        // let obj_model1 = resources::load_model("cube2.obj", &device, &queue, &object_bind_group_layout).await.unwrap();
 
         // configure surface
         surface.configure(&device, &config);
@@ -184,7 +149,7 @@ impl State {
         // camera controller
         let camera_controller = CameraController::new(&camera);
 
-        let globals = Globals::new();
+        let globals = globals::Globals::new();
 
         let global_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Global Buffer"),
@@ -192,33 +157,10 @@ impl State {
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         });
 
-        let globals_bind_group_layout = device.create_bind_group_layout(
-            &wgpu::BindGroupLayoutDescriptor {
-                label: Some("globals_bind_group_layout"),
-                entries: &[wgpu::BindGroupLayoutEntry {
-                    binding: 0,
-                    visibility: wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Buffer {
-                        ty: wgpu::BufferBindingType::Uniform,
-                        has_dynamic_offset: false,
-                        min_binding_size: None,
-                    },
-                    count: None,
-                }],
-            }
-        );
+        let globals_bind_group_layout = globals::Globals::create_bind_group_layout(&device);
 
-        let globals_bind_group = device.create_bind_group(
-            &wgpu::BindGroupDescriptor {
-                label: Some("globals_bind_group"),
-                layout: &globals_bind_group_layout,
-                entries: &[wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: global_buffer.as_entire_binding(),
-                }],
-            }
-        );
-
+        let globals_bind_group = globals::Globals::create_bind_group(&device, &globals_bind_group_layout, global_buffer);
+        
         // Move into light.rs
         // light bind group layout used in light pass
         let light_uniform_bind_group_layout = device.create_bind_group_layout(&BindGroupLayoutDescriptor {
@@ -256,12 +198,12 @@ impl State {
         // lighting buffers
         let light_uniforms = vec![
             LightUniform::new(
-                Vector3::new(0.0, 1.0, 5.0), 
+                Vector3::new(1.0, 1.0, 1.0), 
                 Vector3::new(-9.75137, 8.266664, -10.662715), 
-                Point3::new(9.054782, 8.266664, 6.508993)
+                Point3::new(0.0, 0.0, 0.0)
             ),
             LightUniform::new(
-                Vector3::new(0.0, 1.0, 5.0), 
+                Vector3::new(1.0, 1.0, 1.0), 
                 Vector3::new(11.278884, 5.4666624, -28.170467), 
                 Point3::new(10.712635, 5.4666624, 6.886849)
             ),
@@ -505,12 +447,23 @@ impl State {
             multiview: None,
         });
 
+        let hud_elements = vec![
+            <dyn hud::HudElement>::create_crosshair(&device, &queue, &config)
+        ];
+
+        let hud_container = hud::HudContainer::new(
+            &device, 
+            &queue, 
+            &config, 
+            hud_elements,
+        );
+
         let clear_color = wgpu::Color::BLACK;
         let dt = Duration::from_secs_f32(0.0);
 
         State {
-            obj_handler,
-            obj_handler1,
+            hud_container,
+            object_handler,
             camera,
             camera_controller,
             camera_uniform,
@@ -519,7 +472,7 @@ impl State {
             globals_bind_group,
             lights,
             uniform_light_bind_group,
-            _uniform_light_buffer: uniform_light_buffer,
+            uniform_light_buffer,
             surface,
             device,
             queue,
@@ -553,13 +506,13 @@ impl State {
     }
 
     fn update(&mut self) {
-        // self.instance_buffer = self.device.create_buffer_init(
-        //     &wgpu::util::BufferInitDescriptor {
-        //         label: Some("Instance Buffer"),
-        //         contents: bytemuck::cast_slice(&self.instances.iter().map(Instance::to_raw).collect::<Vec<_>>()),
-        //         usage: wgpu::BufferUsages::VERTEX
-        //     }
-        // ); 
+        // let x = self.lights[0].light.pos.x;
+        // let y = self.lights[0].light.pos.z;
+        
+        // self.lights[0].light.pos.x = x * f32::cos(0.01) - y * f32::sin(0.01);
+        // self.lights[0].light.pos.z = x * f32::sin(0.01) + y * f32::cos(0.01);
+
+        // self.queue.write_buffer(&self._uniform_light_buffer, 0, bytemuck::cast_slice(&[self.lights[0].light.to_raw()]));
 
         self.window.set_title(&format!(
             "FPS: {:.2}, Camera Position: ({:.2}, {:.2}, {:.2})",
@@ -580,14 +533,13 @@ impl State {
         let output = self.surface.get_current_texture()?;
 
         let view = output.texture.create_view(&wgpu::TextureViewDescriptor::default());
+        let hud_view = output.texture.create_view(&wgpu::TextureViewDescriptor::default());
 
         let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
             label: Some("Render Encoder"),
         });
         
-        let instance_buffer = self.obj_handler.create_instance_buffer(&self.device);
-        let instance_buffer1 = self.obj_handler1.create_instance_buffer(&self.device);
-
+        let instance_buffer = self.object_handler.create_instance_buffer(&self.device);
 
         // calculate zdepth buffer
         for light in &mut self.lights {
@@ -617,10 +569,8 @@ impl State {
                 light_render_pass.set_pipeline(&light.light_pass);
                 light_render_pass.set_bind_group(0, &light.light_uniform_bind_group, &[]);
                 light_render_pass.set_bind_group(1, &self.globals_bind_group, &[]);
-                light_render_pass.load_object_instanced(&self.obj_handler.object, &instance_buffer);
-                light_render_pass.load_object_instanced(&self.obj_handler1.object, &instance_buffer1);
+                light_render_pass.load_object_instanced(&self.object_handler.object, &instance_buffer);
             }
-
         }
 
         // self.queue.write_buffer(buffer, offset, data)
@@ -646,20 +596,32 @@ impl State {
                 })
             });
 
-
             render_pass.set_pipeline(&self.render_pipeline);
             render_pass.set_bind_group(2, &self.uniform_light_bind_group, &[]);
             render_pass.set_bind_group(3, &self.globals_bind_group, &[]);
-            render_pass.new_draw_object_instanced(
-                &self.obj_handler.object, 
-                &instance_buffer, 
+            render_pass.draw_object_instanced(
+                &self.object_handler,
+                &instance_buffer,
                 &self.camera_bind_group
             );
-            render_pass.new_draw_object_instanced(
-                &self.obj_handler1.object, 
-                &instance_buffer1, 
-                &self.camera_bind_group
-            );
+        }
+
+        // hud render pass
+        {
+            let mut hud_render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                label: Some("Hud Render Pass"),
+                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                    view: &view,
+                    resolve_target: None,
+                    ops: wgpu::Operations {
+                        load: wgpu::LoadOp::Load, 
+                        store: true,
+                    },
+                })],
+                depth_stencil_attachment: None,
+            });
+
+            hud_render_pass.draw_hud(&self.hud_container);
         }
 
         self.queue.submit(std::iter::once(encoder.finish()));
@@ -667,7 +629,6 @@ impl State {
         output.present();
 
         Ok(())
-
 
     }
 }
