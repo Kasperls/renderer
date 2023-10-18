@@ -20,7 +20,7 @@ fn main() {
     // Decode that sound file into a source
     // Play the sound directly on the device
     let audio = stream_handle.play_once(file).unwrap();
-    audio.set_volume(0.00);
+    audio.set_volume(0.0);
 
     pollster::block_on(run());
 

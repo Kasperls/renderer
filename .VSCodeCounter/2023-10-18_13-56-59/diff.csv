@@ -1,0 +1,5 @@
+"filename", "language", "WGSL", "Rust", "comment", "blank", "total"
+"c:\Users\kasp9\rust\renderer\src\camera.rs", "Rust", 0, -2, 1, 0, -1
+"c:\Users\kasp9\rust\renderer\src\lib.rs", "Rust", 0, 19, 0, 1, 20
+"c:\Users\kasp9\rust\renderer\src\lowres.wgsl", "WGSL", 9, 0, 0, 1, 10
+"Total", "-", 9, 17, 1, 2, 29

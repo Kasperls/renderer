@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="5" height="7" tilewidth="16" tileheight="16" infinite="0" nextlayerid="4" nextobjectid="1">
+ <editorsettings>
+  <export target="maps/room2/room2.csv" format="csv"/>
+ </editorsettings>
+ <tileset firstgid="1" source="../../../PycharmProjects/Main/Backup/assets/texture_atlas.tsx"/>
+ <layer id="1" name="l1" width="5" height="7">
+  <data encoding="csv">
+9,9,9,9,9,
+9,9,9,9,9,
+9,9,9,9,9,
+9,9,9,9,9,
+9,9,9,9,9,
+12,12,12,12,12,
+12,12,12,12,12
+</data>
+ </layer>
+ <layer id="2" name="l2" width="5" height="7">
+  <data encoding="csv">
+0,0,129,0,0,
+0,129,129,129,0,
+129,0,129,0,129,
+0,0,129,0,0,
+0,0,129,0,0,
+0,0,105,0,0,
+0,0,105,0,0
+</data>
+ </layer>
+ <layer id="3" name="l3" width="5" height="7">
+  <data encoding="csv">
+0,0,128,0,0,
+0,128,128,128,0,
+128,0,128,0,128,
+0,0,128,0,0,
+0,0,128,0,0,
+0,0,176,0,0,
+0,0,176,0,0
+</data>
+ </layer>
+</map>

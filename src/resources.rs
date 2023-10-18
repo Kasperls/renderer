@@ -10,7 +10,7 @@ pub async fn load_texture(
     device: &wgpu::Device,
     queue: &wgpu::Queue,
 ) -> anyhow::Result<texture::Texture> {
-    let data = load_binary(file_name).await?;
+    let data = load_binary(file_name)?;
     texture::Texture::from_bytes(device, queue, &data, file_name)
 }
 
@@ -23,7 +23,7 @@ pub async fn load_string(file_name: &str) -> anyhow::Result<String> {
     Ok(txt)
 }
 
-pub async fn load_binary(file_name: &str) -> anyhow::Result<Vec<u8>> {
+pub fn load_binary(file_name: &str) -> anyhow::Result<Vec<u8>> {
     let path = std::path::Path::new(env!("OUT_DIR"))
         .join("res")
         .join(file_name);

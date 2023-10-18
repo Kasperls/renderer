@@ -1,7 +1,8 @@
+use std::process::id;
+
 use cgmath::{prelude::*, Vector3};
 use wgpu::util::DeviceExt;
-use winit::event::ScanCode;
-use crate::{texture, resources::load_binary};
+use crate::{texture, resources::load_binary, room::{self, Room}};
 
 const SCALE_MATRIX: cgmath::Matrix4<f32> = cgmath::Matrix4::new(
     0.5, 0.0, 0.0, 0.0,
@@ -10,161 +11,120 @@ const SCALE_MATRIX: cgmath::Matrix4<f32> = cgmath::Matrix4::new(
     0.0, 0.0, 0.0, 1.0
 );
 
-const TILE_SIZE: i32 = 16;
+const TEX_TILE_SIZE: i32 = 16;
+pub const BLOCK_SIZE: f32 = 1.0;
+/// (width, height)
+const ATLAS_SIZE: (usize,usize) = (24, 24);
 
 const MAP: [[[u8; 9]; 8]; 8] = [
     [
-        [2, 2, 2, 2, 2, 2, 2, 2, 1], 
-        [2, 2, 2, 2, 2, 2, 2, 2, 1], 
-        [2, 2, 2, 2, 2, 2, 2, 2, 1], 
-        [2, 2, 2, 2, 2, 2, 2, 2, 1], 
-        [2, 2, 2, 2, 2, 2, 2, 2, 1], 
-        [2, 2, 2, 2, 2, 2, 2, 2, 1], 
-        [2, 2, 2, 2, 2, 2, 2, 2, 1], 
-        [2, 2, 2, 2, 2, 2, 2, 2, 1]
+        [2, 2, 2, 2, 2, 2, 2, 2, 3], 
+        [2, 2, 2, 2, 2, 2, 2, 2, 3], 
+        [2, 2, 2, 2, 2, 2, 2, 2, 3], 
+        [2, 2, 2, 2, 2, 2, 2, 2, 3], 
+        [2, 2, 2, 2, 2, 2, 2, 2, 3], 
+        [2, 2, 2, 2, 2, 2, 2, 2, 3], 
+        [2, 2, 2, 2, 2, 2, 2, 2, 3], 
+        [2, 2, 2, 2, 2, 2, 2, 2, 3]
     ],[
-        [1, 0, 0, 1, 1, 0, 0, 1, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [1, 0, 0, 1, 1, 0, 0, 1, 1]
+        [1, 0, 0, 1, 1, 0, 0, 1, 3], 
+        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
+        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
+        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
+        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
+        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
+        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
+        [1, 0, 0, 1, 1, 0, 0, 1, 3]
     ],[
-        [1, 0, 0, 1, 1, 0, 0, 1, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [1, 0, 0, 1, 1, 0, 0, 1, 1]
+        [1, 0, 0, 1, 1, 0, 0, 1, 3], 
+        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
+        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
+        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
+        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
+        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
+        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
+        [1, 0, 0, 1, 1, 0, 0, 1, 3]
     ],[
-        [1, 0, 0, 1, 1, 0, 0, 1, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [1, 0, 0, 1, 1, 0, 0, 1, 1]
+        [1, 0, 0, 1, 1, 0, 0, 1, 3], 
+        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
+        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
+        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
+        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
+        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
+        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
+        [1, 0, 0, 1, 1, 0, 0, 1, 3]
     ],[
-        [1, 0, 0, 1, 1, 0, 0, 1, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [1, 0, 0, 1, 1, 0, 0, 1, 1]
+        [1, 0, 0, 1, 1, 0, 0, 1, 3], 
+        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
+        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
+        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
+        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
+        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
+        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
+        [1, 0, 0, 1, 1, 0, 0, 1, 3]
     ],[
-        [1, 0, 0, 1, 1, 0, 0, 1, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [1, 0, 0, 1, 1, 0, 0, 1, 1]
+        [1, 0, 0, 1, 1, 0, 0, 1, 3], 
+        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
+        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
+        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
+        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
+        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
+        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
+        [1, 0, 0, 1, 1, 0, 0, 1, 3]
     ],[
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1]
+        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
+        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
+        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
+        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
+        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
+        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
+        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
+        [0, 0, 0, 0, 0, 0, 0, 0, 3]
     ],[
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1]
+        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
+        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
+        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
+        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
+        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
+        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
+        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
+        [0, 0, 0, 0, 0, 0, 0, 0, 3]
     ],
     
 ];
 
-const MAP1: [[[u8; 9]; 8]; 8] = [
-    [
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-    ],[
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-    ],[
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-    ],[
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-[0, 0, 0, 0, 0, 0, 0, 0, 0],
-[0, 0, 0, 0, 0, 0, 0, 0, 0],
-[0, 0, 0, 0, 0, 0, 0, 0, 0],
-[0, 0, 0, 0, 0, 0, 0, 0, 0],
-[0, 0, 0, 0, 0, 0, 0, 0, 0],
-[0, 0, 0, 0, 0, 0, 0, 0, 0],
-[0, 0, 0, 0, 0, 0, 0, 0, 0],
-    ],[
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-    ],[
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-    ],[
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-[0, 0, 0, 0, 0, 0, 0, 0, 0],
-[0, 0, 0, 0, 0, 0, 0, 0, 0],
-[0, 0, 0, 0, 0, 0, 0, 0, 0],
-[0, 0, 0, 0, 0, 0, 0, 0, 0],
-[0, 0, 0, 0, 0, 0, 0, 0, 0],
-[0, 0, 0, 0, 0, 0, 0, 0, 0],
-[0, 0, 0, 0, 0, 0, 0, 0, 0],
-    ],[
-        [0, 0, 0, 0, 0, 0, 0, 0, 0], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 0], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 0], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 0], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 0], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 0], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 0], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-    ],
-    
-];
+#[derive(Debug)]
+pub struct BlockBox {
+    pub bounds: [Vector3<f32>; 2]
+}
+
+impl BlockBox {
+    fn new(pos: Vector3<f32>) -> Self {
+        let offset = BLOCK_SIZE * 0.5;
+        Self { 
+            bounds: [
+                Vector3::new(pos.x - offset, pos.y - offset, pos.z - offset),
+                Vector3::new(pos.x + offset, pos.y + offset, pos.z + offset),
+            ]
+        }
+    }
+
+    pub fn collide(&self, pos: Vector3<f32>) -> bool {
+        let mut count: u8 = 0;
+        if self.bounds[0].x < pos.x && pos.x < self.bounds[1].x {count += 1};
+        if self.bounds[0].y < pos.y && pos.y < self.bounds[1].y {count += 1};
+        if self.bounds[0].z < pos.z && pos.z < self.bounds[1].z {count += 1};
+
+        if count == 3 {
+            return true;
+        }
+        return false;
+    }
+}
+// litt spagetti
+pub fn get_block_box(pos: Vector3<f32>) -> BlockBox {
+    BlockBox::new(pos)
+}
 
 pub struct ObjectHandler {
     pub object: Object,
@@ -185,10 +145,47 @@ impl ObjectHandler {
             atlas_offsets: vec![]
         };
 
-        obj_handler.read_position_data(MAP);
+        // obj_handler.read_position_data(MAP);
+        obj_handler.read_room_data(vec![room::Room::from_folder("res/maps/room1").unwrap()]);
         obj_handler.create_instances();
         obj_handler
         
+    }
+
+    pub fn read_room_data(&mut self, rooms: Vec<Room>) {
+        // for hver block: self.positions.push(vec3) v self.atlas_offsets.push(atl_pos(vec2))
+        for room in rooms {
+            for layer in 0..room.size[0] {
+                for line in 0..room.size[1] {
+                    for col in 0..room.size[2] {
+
+                        let layer_cost = room.data.len() / room.size[0];
+                        let idx = layer * layer_cost + line*room.size[2] + col;
+                        let block_id = room.data[idx];
+
+                        match block_id {
+                            -1 => {
+                                continue;
+                            }
+                            _ => {
+                                self.positions.push(Vector3::new(
+                                    col as f32 * BLOCK_SIZE, 
+                                    layer as f32 * BLOCK_SIZE, 
+                                    line as f32 * BLOCK_SIZE,
+                                ));
+
+                                let alt_y = (block_id) / ATLAS_SIZE.0 as i32;
+                                let alt_x = block_id - alt_y*ATLAS_SIZE.0 as i32;
+        
+                                self.atlas_offsets.push(atl_pos(1 + alt_x as i32, 1 + alt_y as i32))
+                            }
+                        }
+
+                    }
+                }
+            }
+        }
+        // todo!()
     }
 
     pub fn create_instance_buffer(&self, device: &wgpu::Device) -> wgpu::Buffer {
@@ -215,24 +212,33 @@ impl ObjectHandler {
         for x in 0..8 {
             for y in 0..8 {
                 for z in 0..9 {
+                    self.positions.push(Vector3::new(
+                        z as f32 * BLOCK_SIZE, 
+                        x as f32 * BLOCK_SIZE, 
+                        y as f32 * BLOCK_SIZE,
+                    ));
                     match object_array[x][y][z] {
                         1 => {
-                            self.positions.push(Vector3::new(z as f32, x as f32, y as f32));
                             self.atlas_offsets.push(atl_pos(6, 6));
                         },
                         2 => {
-                            self.positions.push(Vector3::new(z as f32, x as f32, y as f32));
                             self.atlas_offsets.push(atl_pos(6, 7));
                         }
-                        _ => {}
+                        3 => {
+                            self.atlas_offsets.push(atl_pos(5, 7));
+                        }
+                        _ => {
+                            // removes positions wrongly addedzste
+                            self.positions.remove(self.positions.len() - 1);
+                        }
                     }
                 }
             }
         }
     }
 
-    pub async fn load_texture_atlas(file_name: &str, device: &wgpu::Device, queue: &wgpu::Queue) -> anyhow::Result<TextureAtlas> {
-        let data = load_binary("texture_atlas.png").await.unwrap();
+    pub fn load_texture_atlas(file_name: &str, device: &wgpu::Device, queue: &wgpu::Queue) -> anyhow::Result<TextureAtlas> {
+        let data = load_binary("texture_atlas.png").unwrap();
         let texture = texture::Texture::from_bytes(device, queue, &data, file_name).expect("failed to create texture");
 
         let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor { 
@@ -282,7 +288,7 @@ impl ObjectHandler {
 }
 
 fn atl_pos(x: i32, y: i32) -> [i32; 4] {
-    return [x * TILE_SIZE, y * TILE_SIZE, (x-1) * TILE_SIZE, (y-1) * TILE_SIZE];
+    return [x * TEX_TILE_SIZE, y * TEX_TILE_SIZE, (x-1) * TEX_TILE_SIZE, (y-1) * TEX_TILE_SIZE];
 }
 
 pub struct Mesh {
@@ -313,7 +319,7 @@ impl Instance {
             model: (
                 cgmath::Matrix4::from_translation(self.position) * 
                 cgmath::Matrix4::from(self.rotation) * 
-                SCALE_MATRIX
+                (SCALE_MATRIX * BLOCK_SIZE)
             ).into(),
             normal: cgmath::Matrix3::from(self.rotation).into(),
             atlas_rect: self.atlas_rect,
@@ -392,24 +398,6 @@ impl <'a, 'b> DrawObject<'b> for wgpu::RenderPass<'a>
 where
     'b: 'a,
 {
-    // fn new_draw_mesh_instanced(&mut self, mesh: &'b Mesh, material: &'b Material, instances: std::ops::Range<u32>, camera_bind_group: &'b wgpu::BindGroup) {
-    //     self.set_vertex_buffer(0, mesh.vertex_buffer.slice(..));
-    //     self.set_index_buffer(mesh.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
-    //     self.set_bind_group(0, &material.bind_group, &[]);
-    //     self.set_bind_group(1, camera_bind_group, &[]);
-    //     self.draw_indexed(0..mesh.num_elements, 0, instances);
-    // }
-    // fn new_draw_object_instanced(&mut self, object: &'b Object, instance_buffer: &'b wgpu::Buffer, camera_bind_group: &'b wgpu::BindGroup) {
-    //     // let instances = 0..object.meshes.len() as u32;
-    //     let instances = instance_buffer.size() / std::mem::size_of::<InstanceRaw>() as u64;
-    //     self.set_vertex_buffer(1, instance_buffer.slice(..));
-
-    //     for mesh in &object.meshes {
-    //         let material = &object.materials[mesh.material];
-    //         self.new_draw_mesh_instanced(mesh, material, 0..instances as u32, camera_bind_group);
-    //     }
-    // }
-
     fn draw_mesh_instanced(&mut self, mesh: &'b Mesh, instances: std::ops::Range<u32>, camera_bind_group: &'b wgpu::BindGroup) {
         self.set_vertex_buffer(0, mesh.vertex_buffer.slice(..));
         self.set_index_buffer(mesh.index_buffer.slice(..), wgpu::IndexFormat::Uint32);

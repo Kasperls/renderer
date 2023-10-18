@@ -1,7 +1,10 @@
-use cgmath::{Rad, Point3, InnerSpace, SquareMatrix};
+use cgmath::{Rad, Point3, InnerSpace, SquareMatrix, Vector3, Zero};
 use winit::event::{WindowEvent, KeyboardInput, ElementState, VirtualKeyCode};
 
-use crate::{WINDOW_DIMENTIONS, PLAYER_ACCELERAION, OPENGL_TO_WGPU_MATRIX};
+use crate::{WINDOW_DIMENTIONS, PLAYER_ACCELERAION, OPENGL_TO_WGPU_MATRIX, object::{self, BLOCK_SIZE}, hitbox::{HitBox, self, HitPlane}};
+
+const PLAYER_SIZE: f32 = object::BLOCK_SIZE * 0.5;
+const GRAVITY: f32 = 0.015;
 
 #[derive(Debug, Copy, Clone)]
 pub enum MoveDirection {
@@ -38,6 +41,7 @@ pub struct CameraController {
     acc: cgmath::Vector3<f32>,
     vel: cgmath::Vector3<f32>,
     pos: cgmath::Vector3<f32>,
+    forward: cgmath::Vector3<f32>,
     yaw: cgmath::Rad<f32>,
     pitch: cgmath::Rad<f32>,
 }
@@ -49,6 +53,7 @@ impl CameraController {
             acc: cgmath::vec3(0.0, 0.0, 0.0),
             vel: cgmath::vec3(0.0, 0.0, 0.0),
             pos: cgmath::vec3(camera.eye.x, camera.eye.y, camera.eye.z),
+            forward: cgmath::vec3(0.0, 0.0, 0.0),
             yaw: Rad(0.0),
             pitch: Rad(0.0),
         }
@@ -115,22 +120,24 @@ impl CameraController {
         }
     }
 
-    pub fn update_camera(&mut self, camera: &mut Camera) {
+    pub fn update_camera(&mut self, camera: &mut Camera, block_pos: &Vec<Vector3<f32>>) {
         self.acc = cgmath::vec3(
-            self.movement[0].into_f32(),
-            self.movement[1].into_f32(),
-            self.movement[2].into_f32(),
+            self.movement[0].into_f32() * 0.5,
+            self.movement[1].into_f32() * 3.0,
+            self.movement[2].into_f32() * 0.5,
         ) * PLAYER_ACCELERAION;
 
         self.acc = cgmath::Matrix3::from_angle_y(-self.yaw) * self.acc;
+        // self.acc.y -= GRAVITY;
 
-        self.vel += self.acc;
+        const DRAG: f32 = 0.15;
+        self.vel += self.acc - self.vel * DRAG;
 
-        self.pos += self.vel;
+        self.update_pos(block_pos);
 
         camera.eye = Point3::new(self.pos.x, self.pos.y, self.pos.z);
 
-        self.vel *= 0.7;
+        // self.vel *= DRAG;
 
         self.acc = cgmath::vec3(0.0, 0.0, 0.0);
 
@@ -139,15 +146,80 @@ impl CameraController {
         let (sin_pitch, cos_pitch) = self.pitch.0.sin_cos();
         let (sin_yaw, cos_yaw) = self.yaw.0.sin_cos();
         
-        let forward = cgmath::Vector3::new(
+        self.forward = cgmath::Vector3::new(
             cos_pitch * cos_yaw,
             sin_pitch,
             cos_pitch * sin_yaw
         ).normalize();
 
-        camera.target = camera.eye + forward;
+        camera.target = camera.eye + self.forward;
 
         camera.up = cgmath::vec3(0.0, 1.0, 0.0);
+    }
+
+    fn update_pos(&mut self, block_pos: &Vec<Vector3<f32>>) {
+        self.pos.x += self.vel.x;
+        let collisions = self.get_collisions(block_pos);
+        for block in collisions {
+            if self.vel.x > 0.0 {
+                self.pos.x = block.x - BLOCK_SIZE / 2.0 - PLAYER_SIZE / 2.0
+            }
+            if self.vel.x < 0.0 {
+                self.pos.x = block.x + BLOCK_SIZE / 2.0 + PLAYER_SIZE / 2.0
+            }
+        }
+
+        self.pos.y += self.vel.y;
+        let collisions = self.get_collisions(block_pos);
+        for block in collisions {
+            if self.vel.y > 0.0 {
+                self.pos.y = block.y - BLOCK_SIZE / 2.0 - PLAYER_SIZE / 2.0
+            }
+            if self.vel.y < 0.0 {
+                self.pos.y = block.y + BLOCK_SIZE / 2.0 + PLAYER_SIZE / 2.0
+            }
+        }
+
+        self.pos.z += self.vel.z;
+        let collisions = self.get_collisions(block_pos);
+        for block in collisions {
+            if self.vel.z > 0.0 {
+                self.pos.z = block.z - BLOCK_SIZE / 2.0 - PLAYER_SIZE / 2.0
+            }
+            if self.vel.z < 0.0 {
+                self.pos.z = block.z + BLOCK_SIZE / 2.0 + PLAYER_SIZE / 2.0
+            }
+        }
+    }
+
+    fn get_collisions(&self, block_pos: &Vec<Vector3<f32>>) -> Vec<Vector3<f32>> {
+        let mut collisions = vec![];
+        for block in block_pos {
+            let hitbox = hitbox::HitBoxRaw::new(*block, BLOCK_SIZE);
+            if self.hitbox_collision(&hitbox) {
+                collisions.push(block.clone());
+            }
+        }
+
+        collisions
+    }
+}
+
+impl HitBox for CameraController {
+    fn negative_corner(&self) -> Vector3<f32> {
+        Vector3::new(
+            self.pos.x - PLAYER_SIZE / 2.0,
+            self.pos.y - PLAYER_SIZE / 2.0,
+            self.pos.z - PLAYER_SIZE / 2.0,
+        )
+    }
+
+    fn positive_corner(&self) -> Vector3<f32> {
+        Vector3::new(
+            self.pos.x + PLAYER_SIZE / 2.0,
+            self.pos.y + PLAYER_SIZE / 2.0,
+            self.pos.z + PLAYER_SIZE / 2.0,
+        )
     }
 }
 
@@ -170,11 +242,11 @@ impl Camera {
 
     pub fn default(config: &wgpu::SurfaceConfiguration) -> Self {
         Camera {
-            eye: (-4.0, 4.0, 2.0).into(),
+            eye: (4.0, 4.0, 4.0).into(),
             target: (0.0, -1.0, 0.0).into(),
             up: cgmath::Vector3::unit_y(),
             aspect: config.width as f32 / config.height as f32,
-            fovy: 45.0,
+            fovy: 50.0,
             znear: 0.1,
             zfar: 100.0,
         }

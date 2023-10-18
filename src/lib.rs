@@ -1,8 +1,9 @@
+use std::pin::Pin;
 use std::time::{Duration, Instant};
-use std::vec;
+use std::{vec, fs};
 
 use camera::{Camera, CameraController, CameraUniform};
-use hud::DrawHud;
+use hud::{DrawHud, HudContainer};
 use light::{LightUniform, LoadObjectVertexData, LightContainer};
 use model::Vertex;
 use object::{DrawObject, Object, InstanceRaw, ObjectHandler};
@@ -14,7 +15,7 @@ use winit::{
     event_loop::{ControlFlow, EventLoop},
     window::{WindowBuilder, Window},
 };
-use cgmath::{Point3, Vector3, Vector2, Rotation3};
+use cgmath::{Point3, Vector3, Vector2, Angle, Array};
 
 mod object;
 mod texture;
@@ -24,13 +25,19 @@ mod camera;
 mod light;
 mod globals;
 mod hud;
+mod room;
+mod hitbox;
+
+mod traits;
 
 const PLAYER_ACCELERAION: f32 = 0.04;
 const WINDOW_DIMENTIONS: (u32, u32) = (1280, 720);
 const SHADOW_MAP_FACTOR: f32 = 10.0;
-const _TARGET_FPS: u32 = 60;
-const NUM_LIGHTS: u64 = 2;
+const _TARGET_FPS: u32 = 10;
+const NUM_LIGHTS: u64 = 1;
 const MAX_LIGHTS: u64 = 10;
+
+const PIXEL_RES: u32 = 2;
 
 #[rustfmt::skip]
 pub const OPENGL_TO_WGPU_MATRIX: cgmath::Matrix4<f32> = cgmath::Matrix4::new(
@@ -52,6 +59,9 @@ struct State {
     lights: Vec<LightContainer>,
     uniform_light_bind_group: wgpu::BindGroup,
     uniform_light_buffer: wgpu::Buffer,
+    lowres_texture: wgpu::Texture,
+    lowres_bind_group: wgpu::BindGroup,
+    lowres_pipeline: wgpu::RenderPipeline,
     surface: wgpu::Surface,
     device: wgpu::Device,
     queue: wgpu::Queue,
@@ -66,6 +76,7 @@ struct State {
 
 impl State {
     async fn new(window: Window) -> Self {
+
         let size = window.inner_size();
 
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
@@ -110,13 +121,29 @@ impl State {
             view_formats: vec![],
         };
 
+        // draw to this before drawing to the window surface later
+        let lowres_texture = device.create_texture(&wgpu::TextureDescriptor { 
+            label: Some("Pre renderer texture"), 
+            size: wgpu::Extent3d {
+                width: size.width / PIXEL_RES,
+                height: size.height / PIXEL_RES,
+                depth_or_array_layers: 1,
+            }, 
+            mip_level_count: 1, 
+            sample_count: 1, 
+            dimension: wgpu::TextureDimension::D2, 
+            format: wgpu::TextureFormat::Bgra8UnormSrgb, 
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::TEXTURE_BINDING, 
+            view_formats: &[],
+        });
+
         // Create bind group layout, used to bind textures to the shader
         let object_bind_group_layout = Object::get_bind_group_layout(&device);
 
         // Load model
         let object_handler = object::ObjectHandler::new(
             resources::load_object("cube_smart.obj", &device, &queue, &object_bind_group_layout).await.unwrap(),
-            ObjectHandler::load_texture_atlas("cube_smart.png", &device, &queue).await.unwrap(),
+            ObjectHandler::load_texture_atlas("cube_smart.png", &device, &queue).unwrap(),
         );
 
         // configure surface
@@ -128,7 +155,7 @@ impl State {
             &config, 
             "depth_texture", 
             wgpu::CompareFunction::Less,
-            Vector2::new(config.width as f32, config.height as f32),
+            Vector2::new((config.width / PIXEL_RES) as f32, (config.height / PIXEL_RES) as f32),
         );
 
         // create camera
@@ -198,15 +225,15 @@ impl State {
         // lighting buffers
         let light_uniforms = vec![
             LightUniform::new(
-                Vector3::new(1.0, 1.0, 1.0), 
-                Vector3::new(-9.75137, 8.266664, -10.662715), 
-                Point3::new(0.0, 0.0, 0.0)
+                Vector3::new(0.7, 0.8, 0.9), 
+                Vector3::new(0.0, 14.266664, 0.662715), 
+                Point3::new(10.0, 0.0, 10.0)
             ),
-            LightUniform::new(
-                Vector3::new(1.0, 1.0, 1.0), 
-                Vector3::new(11.278884, 5.4666624, -28.170467), 
-                Point3::new(10.712635, 5.4666624, 6.886849)
-            ),
+            // LightUniform::new(
+            //     Vector3::new(0.5, 0.8, 1.0), 
+            //     Vector3::new(11.278884, 5.4666624, -28.170467), 
+            //     Point3::new(10.712635, 5.4666624, 6.886849)
+            // ),
         ];
 
         let mut lights: Vec<LightContainer> = vec![];
@@ -447,6 +474,133 @@ impl State {
             multiview: None,
         });
 
+        /* 
+        
+        */
+
+        let lowres_shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("Lowres Shader"),
+            source: wgpu::ShaderSource::Wgsl(include_str!("lowres.wgsl").into()),
+        });
+
+        let lowres_sampler = device.create_sampler(
+            &wgpu::SamplerDescriptor {
+                address_mode_u: wgpu::AddressMode::ClampToEdge,
+                address_mode_v: wgpu::AddressMode::ClampToEdge,
+                address_mode_w: wgpu::AddressMode::ClampToEdge,
+                mag_filter: wgpu::FilterMode::Nearest,
+                min_filter: wgpu::FilterMode::Nearest,
+                mipmap_filter: wgpu::FilterMode::Nearest,
+                label: None,
+                lod_min_clamp: 0.0,
+                lod_max_clamp: 100.0,
+                compare: None,
+                anisotropy_clamp: 1,
+                border_color: None,
+            }
+        );
+
+        let lowres_bind_group_layout = device.create_bind_group_layout(&BindGroupLayoutDescriptor {
+            label: Some("lowres_bind_group_layout"),
+            entries: &[
+                wgpu::BindGroupLayoutEntry {
+                    binding: 0, 
+                    visibility: wgpu::ShaderStages::FRAGMENT, 
+                    ty: wgpu::BindingType::Texture { 
+                        multisampled: false, 
+                        view_dimension: wgpu::TextureViewDimension::D2, 
+                        sample_type: wgpu::TextureSampleType::Float { filterable: true }
+                    }, 
+                    count: None, 
+                },
+                wgpu::BindGroupLayoutEntry {
+                    binding: 1, 
+                    visibility: wgpu::ShaderStages::FRAGMENT, 
+                    ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering), 
+                    count: None,
+                },
+                wgpu::BindGroupLayoutEntry {
+                    binding: 2,
+                    visibility: wgpu::ShaderStages::all(),
+                    ty: wgpu::BindingType::Buffer { 
+                        ty: wgpu::BufferBindingType::Uniform, 
+                        has_dynamic_offset: false, 
+                        min_binding_size: None, 
+                    },
+                    count: None,
+                }
+            ],
+        });
+
+        let lowres_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Lowres Buffer"),
+            contents: bytemuck::cast_slice(&[size.width as f32, size.height as f32]),
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+        });
+
+        let lowres_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("lowres_bind_group"),
+            layout: &lowres_bind_group_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::TextureView(&lowres_texture.create_view(&wgpu::TextureViewDescriptor::default())),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::Sampler(&lowres_sampler),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: lowres_buffer.as_entire_binding(),
+                }
+            ],
+        });
+
+        let lowres_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some("Pixel Render Pipeline Layout"),
+            bind_group_layouts: &[&lowres_bind_group_layout],
+            push_constant_ranges: &[],
+        });
+
+        let lowres_pipeline = device.create_render_pipeline( &wgpu::RenderPipelineDescriptor {
+            label: Some("Lowres Render Pipeline"),
+            layout: Some(&lowres_pipeline_layout),
+            vertex: wgpu::VertexState { 
+                module: &lowres_shader, 
+                entry_point: "vs_main", 
+                // TEMP DESC
+                buffers: &[hud::HudVertex::desc()], 
+            },
+            fragment: Some(wgpu::FragmentState { 
+                module: &lowres_shader, 
+                entry_point: "fs_main", 
+                targets: &[Some(ColorTargetState {
+                    format: config.format,
+                    blend: Some(wgpu::BlendState::REPLACE),
+                    write_mask: wgpu::ColorWrites::ALL,
+                })],
+            }),
+            primitive:  wgpu::PrimitiveState {
+                topology: wgpu::PrimitiveTopology::TriangleList,
+                strip_index_format: None,
+                front_face: wgpu::FrontFace::Ccw,
+                cull_mode: Some(wgpu::Face::Back),
+                polygon_mode: wgpu::PolygonMode::Fill,
+                unclipped_depth: false,
+                conservative: false,
+            },
+            depth_stencil: None,
+            multisample: wgpu::MultisampleState {
+                count: 1,
+                mask: !0,
+                alpha_to_coverage_enabled: false,
+            },
+            multiview: None,
+        });
+
+        // hud elements
+
         let hud_elements = vec![
             <dyn hud::HudElement>::create_crosshair(&device, &queue, &config)
         ];
@@ -474,6 +628,9 @@ impl State {
             uniform_light_bind_group,
             uniform_light_buffer,
             surface,
+            lowres_texture,
+            lowres_bind_group,
+            lowres_pipeline,
             device,
             queue,
             _config: config,
@@ -522,7 +679,7 @@ impl State {
             self.camera.eye.z
         ));
 
-        self.camera_controller.update_camera(&mut self.camera);
+        self.camera_controller.update_camera(&mut self.camera, &self.object_handler.positions);
         self.camera_uniform.update_view_proj(&self.camera);
 
         self.queue.write_buffer(&self.camera_buffer, 0, bytemuck::cast_slice(&[self.camera_uniform]));
@@ -532,8 +689,11 @@ impl State {
     fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
         let output = self.surface.get_current_texture()?;
 
+        // the final view
         let view = output.texture.create_view(&wgpu::TextureViewDescriptor::default());
-        let hud_view = output.texture.create_view(&wgpu::TextureViewDescriptor::default());
+
+        // the scene is rendered to this
+        let pre_view = self.lowres_texture.create_view(&wgpu::TextureViewDescriptor::default());
 
         let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
             label: Some("Render Encoder"),
@@ -579,7 +739,7 @@ impl State {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("Render Pass"),
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                    view: &view,
+                    view: &pre_view,
                     resolve_target: None,
                     ops: wgpu::Operations {
                         load: wgpu::LoadOp::Clear(self.clear_color),
@@ -606,6 +766,29 @@ impl State {
             );
         }
 
+        // pixel render pass
+        let (vertex_buf, index_buf) = HudContainer::create_buffers(&self.device);
+        {
+            let mut lowres_render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                label: Some("Pixel Render Pass"),
+                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                    view: &view,
+                    resolve_target: None,
+                    ops: wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(self.clear_color),
+                        store: true,
+                    },
+                })],
+                depth_stencil_attachment: None,
+            });
+
+            lowres_render_pass.set_pipeline(&self.lowres_pipeline);
+            lowres_render_pass.set_bind_group(0, &self.lowres_bind_group, &[]);
+            lowres_render_pass.set_vertex_buffer(0, vertex_buf.slice(..));
+            lowres_render_pass.set_index_buffer(index_buf.slice(..), wgpu::IndexFormat::Uint32);
+            lowres_render_pass.draw_indexed(0..6, 0, 0..1);
+        }
+
         // hud render pass
         {
             let mut hud_render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -620,8 +803,8 @@ impl State {
                 })],
                 depth_stencil_attachment: None,
             });
-
-            hud_render_pass.draw_hud(&self.hud_container);
+            
+            // hud_render_pass.draw_hud(&self.hud_container);
         }
 
         self.queue.submit(std::iter::once(encoder.finish()));
