@@ -79,13 +79,13 @@ fn vs_main(
 @group(0) @binding(0) var t_diffuse: texture_2d<f32>;
 @group(0) @binding(1) var s_diffuse: sampler;
 
-
 struct LightUniform {
-    @location(0) color: vec4<f32>,
+    @location(0) color: vec3<f32>,
     @location(1) position: vec4<f32>,
-    @location(2) light_matrix: mat4x4<f32>,
+    @location(2) direction: vec3<f32>,
+    @location(3) light_matrix: mat4x4<f32>,
 };
-@group(2) @binding(0) var<storage, read>  light_uniform: array<LightUniform>;
+@group(2) @binding(0) var<storage, read>  light_uniforms: array<LightUniform>;
 @group(2) @binding(1) var t_depth: texture_depth_2d_array;
 @group(2) @binding(2) var s_depth: sampler_comparison;
 
@@ -99,7 +99,7 @@ fn fetch_shadow(homogeneous_coords: vec4<f32>, offset: vec2<f32>, index: i32) ->
     let proj_cords = homogeneous_coords.xyz / homogeneous_coords.w;
     let uv = proj_cords.xy * flip_correction + vec2<f32>(0.5, 0.5);
     
-    return textureSampleCompareLevel(t_depth, s_depth, uv + offset, index, proj_cords.z);
+    return textureSampleCompareLevel(t_depth, s_depth, uv + offset, index, proj_cords.z - 0.00001);
 }
 
 fn transform_uv(uv: vec2<f32>, rect: vec4<f32>) -> vec2<f32> {
@@ -116,28 +116,35 @@ fn fs_main(vertex: VertexOutput) -> @location(0) vec4<f32> {
     
     let normal = normalize(vertex.normal);
 
-    var visibility = 0.05;
+    var spot_light = 0.05;
     var color = vec3(0.0);
     let oneOverShadowDepthTextureSize = 1.0 / shadowDepthTextureSize;
 
-    let ambient = 0.5;
+    let ambient = 0.005;
     	
     for (var i = 0; i < globals.num_lights; i += 1) {
+
+        let obj_light_dir = normalize(light_uniforms[i].position.xyz - vertex.world_pos.xyz);
+        let light_color = light_uniforms[i].color;
+        let diffuse = max(dot(normal, obj_light_dir), 0.0);
+
+        if dot(normalize(light_uniforms[i].direction), obj_light_dir) > -.95 {
+            color += light_color.xyz * object_color.xyz * (spot_light * diffuse / 9.0 + ambient);
+            continue;
+        }
         for (var y = -1; y <= 1; y++) {
                 for (var x = -1; x <= 1; x++) { 
                     let offset = vec2<f32>(vec2(x, y)) * oneOverShadowDepthTextureSize * 2.0;
-                    visibility += fetch_shadow(light_uniform[i].light_matrix * vertex.world_pos, offset, i);
+                    spot_light += fetch_shadow(light_uniforms[i].light_matrix * vertex.world_pos, offset, i);
 
                 }
             }
-        visibility /= 9.0;
+        spot_light /= 9.0;
 
-        let light_dir = normalize(light_uniform[i].position.xyz - vertex.world_pos.xyz);
-        let light_color = light_uniform[i].color;
-        let diffuse = max(dot(normal, light_dir), 0.0);
-        color += (ambient) * light_color.xyz * object_color.xyz * visibility;
+
+        color += light_color.xyz * object_color.xyz * (spot_light * diffuse + ambient);
     }
-    visibility /= f32(globals.num_lights);
+    spot_light /= f32(globals.num_lights);
 
     let out = vec4<f32>(color.rgb, 1.0);
     

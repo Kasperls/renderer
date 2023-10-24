@@ -136,7 +136,7 @@ pub trait HudElement {
 
 impl dyn HudElement {
     pub fn create_crosshair(device: &wgpu::Device, queue: &wgpu::Queue, config: &wgpu::SurfaceConfiguration) -> Box<dyn HudElement> {
-        let data = load_binary("cube-texture.png").expect("couldn't load image");
+        let data = load_binary("C:/Users/kasp9/rust/renderer/res/crosshair.png").expect("couldn't load image");
         let texture = texture::Texture::from_bytes(device, queue, &data, "crosshair.png").unwrap();
         let size = Vector2::new(0.1, 0.1);
         let position = Vector2::new(config.height / 2, config.width / 2);

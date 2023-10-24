@@ -16,83 +16,6 @@ pub const BLOCK_SIZE: f32 = 1.0;
 /// (width, height)
 const ATLAS_SIZE: (usize,usize) = (24, 24);
 
-const MAP: [[[u8; 9]; 8]; 8] = [
-    [
-        [2, 2, 2, 2, 2, 2, 2, 2, 3], 
-        [2, 2, 2, 2, 2, 2, 2, 2, 3], 
-        [2, 2, 2, 2, 2, 2, 2, 2, 3], 
-        [2, 2, 2, 2, 2, 2, 2, 2, 3], 
-        [2, 2, 2, 2, 2, 2, 2, 2, 3], 
-        [2, 2, 2, 2, 2, 2, 2, 2, 3], 
-        [2, 2, 2, 2, 2, 2, 2, 2, 3], 
-        [2, 2, 2, 2, 2, 2, 2, 2, 3]
-    ],[
-        [1, 0, 0, 1, 1, 0, 0, 1, 3], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
-        [1, 0, 0, 1, 1, 0, 0, 1, 3]
-    ],[
-        [1, 0, 0, 1, 1, 0, 0, 1, 3], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
-        [1, 0, 0, 1, 1, 0, 0, 1, 3]
-    ],[
-        [1, 0, 0, 1, 1, 0, 0, 1, 3], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
-        [1, 0, 0, 1, 1, 0, 0, 1, 3]
-    ],[
-        [1, 0, 0, 1, 1, 0, 0, 1, 3], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
-        [1, 0, 0, 1, 1, 0, 0, 1, 3]
-    ],[
-        [1, 0, 0, 1, 1, 0, 0, 1, 3], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
-        [1, 0, 0, 1, 1, 0, 0, 1, 3]
-    ],[
-        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 3]
-    ],[
-        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 3], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 3]
-    ],
-    
-];
-
 #[derive(Debug)]
 pub struct BlockBox {
     pub bounds: [Vector3<f32>; 2]
@@ -129,7 +52,7 @@ pub fn get_block_box(pos: Vector3<f32>) -> BlockBox {
 pub struct ObjectHandler {
     pub object: Object,
     texture_atlas: TextureAtlas,
-    instances: Vec<InstanceRaw>,
+    pub instances: Vec<InstanceRaw>,
     pub positions: Vec<Vector3<f32>>,
     pub atlas_offsets: Vec<[i32; 4]>
 }
@@ -146,7 +69,7 @@ impl ObjectHandler {
         };
 
         // obj_handler.read_position_data(MAP);
-        obj_handler.read_room_data(vec![room::Room::from_folder("res/maps/room1").unwrap()]);
+        obj_handler.read_room_data(vec![room::Room::from_folder("C:/Users/kasp9/rust/renderer/res/maps/room1").unwrap()]);
         obj_handler.create_instances();
         obj_handler
         
@@ -205,35 +128,6 @@ impl ObjectHandler {
                 rotation: cgmath::Quaternion::one(),
                 atlas_rect: *offsets,
             }.to_raw());
-        }
-    }
-
-    fn read_position_data(&mut self, object_array: [[[u8; 9]; 8]; 8]) {
-        for x in 0..8 {
-            for y in 0..8 {
-                for z in 0..9 {
-                    self.positions.push(Vector3::new(
-                        z as f32 * BLOCK_SIZE, 
-                        x as f32 * BLOCK_SIZE, 
-                        y as f32 * BLOCK_SIZE,
-                    ));
-                    match object_array[x][y][z] {
-                        1 => {
-                            self.atlas_offsets.push(atl_pos(6, 6));
-                        },
-                        2 => {
-                            self.atlas_offsets.push(atl_pos(6, 7));
-                        }
-                        3 => {
-                            self.atlas_offsets.push(atl_pos(5, 7));
-                        }
-                        _ => {
-                            // removes positions wrongly addedzste
-                            self.positions.remove(self.positions.len() - 1);
-                        }
-                    }
-                }
-            }
         }
     }
 
@@ -328,10 +222,13 @@ impl Instance {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
+#[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable, Debug)]
 pub struct InstanceRaw {
+    // position from matrix
     pub model: [[f32; 4]; 4],
+    // normal from matrix
     pub normal: [[f32; 3]; 3],
+    // atlas rect
     pub atlas_rect: [i32; 4],
 }
 
@@ -418,7 +315,7 @@ where
 }
 
 impl Object {
-    pub fn get_bind_group_layout(device: &wgpu::Device) -> wgpu::BindGroupLayout {
+    pub fn get_textured_bind_group_layout(device: &wgpu::Device) -> wgpu::BindGroupLayout {
         device.create_bind_group_layout(
             &wgpu::BindGroupLayoutDescriptor { 
                 entries: &[

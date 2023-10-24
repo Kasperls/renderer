@@ -1,8 +1,0 @@
-"filename", "language", "Rust", "XML", "CSV", "comment", "blank", "total"
-"c:\Users\kasp9\rust\renderer\res\maps\room1\test_floor.csv", "CSV", 0, 0, 15, 0, 1, 16
-"c:\Users\kasp9\rust\renderer\res\maps\room1\test_walls.csv", "CSV", 0, 0, 15, 0, 1, 16
-"c:\Users\kasp9\rust\renderer\res\test.tmx", "XML", 0, 45, 0, 0, 1, 46
-"c:\Users\kasp9\rust\renderer\src\lib.rs", "Rust", 2, 0, 0, 0, 2, 4
-"c:\Users\kasp9\rust\renderer\src\object.rs", "Rust", 3, 0, 0, 0, 1, 4
-"c:\Users\kasp9\rust\renderer\src\room.rs", "Rust", 40, 0, 0, 3, 9, 52
-"Total", "-", 45, 45, 30, 3, 15, 138

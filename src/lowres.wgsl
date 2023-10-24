@@ -20,11 +20,10 @@ struct VertexOutput {
 };
 
 fn get_pos(pos: vec3<f32>) -> vec2<f32> {
-    let rect = vec4(0.0, 0.0, 1.0, 1.0);
-    var offset = vec2(0.1, 1.0);
+    let rect = vec4(0.0, 0.0, 1.0 / w_size.size.y, 1.0 * w_size.size.x / w_size.size.y / w_size.size.y);
     let uv_r = vec2(pos.x, pos.y);
-    let uv = mix(rect.yx, rect.zw / w_size.size.y, uv_r);
-    return (uv * vec2(0.5, 1.0));
+    let uv = mix(rect.yx, rect.zw, uv_r);
+    return (uv * vec2(0.561, 0.561));
 }
 
 @fragment

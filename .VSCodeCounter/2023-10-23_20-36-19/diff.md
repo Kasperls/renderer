@@ -1,28 +1,26 @@
 # Diff Summary
 
-Date : 2023-10-08 19:39:54
+Date : 2023-10-23 20:36:19
 
 Directory c:\\Users\\kasp9\\rust\\renderer
 
-Total : 6 files,  120 codes, 3 comments, 15 blanks, all 138 lines
+Total : 11 files,  933 codes, 22 comments, 81 blanks, all 1036 lines
 
 [Summary](results.md) / [Details](details.md) / Diff Summary / [Diff Details](diff-details.md)
 
 ## Languages
 | language | files | code | comment | blank | total |
 | :--- | ---: | ---: | ---: | ---: | ---: |
-| Rust | 3 | 45 | 3 | 12 | 60 |
-| XML | 1 | 45 | 0 | 1 | 46 |
-| CSV | 2 | 30 | 0 | 2 | 32 |
+| Wavefront (OBJ) | 1 | 462 | 2 | 1 | 465 |
+| Rust | 7 | 425 | 11 | 74 | 510 |
+| WGSL | 2 | 36 | 7 | 5 | 48 |
+| Wavefront (MTL) | 1 | 10 | 2 | 1 | 13 |
 
 ## Directories
 | path | files | code | comment | blank | total |
 | :--- | ---: | ---: | ---: | ---: | ---: |
-| . | 6 | 120 | 3 | 15 | 138 |
-| res | 3 | 75 | 0 | 3 | 78 |
-| res (Files) | 1 | 45 | 0 | 1 | 46 |
-| res\\maps | 2 | 30 | 0 | 2 | 32 |
-| res\\maps\\room1 | 2 | 30 | 0 | 2 | 32 |
-| src | 3 | 45 | 3 | 12 | 60 |
+| . | 11 | 933 | 22 | 81 | 1,036 |
+| res | 2 | 472 | 4 | 2 | 478 |
+| src | 9 | 461 | 18 | 79 | 558 |
 
 [Summary](results.md) / [Details](details.md) / Diff Summary / [Diff Details](diff-details.md)

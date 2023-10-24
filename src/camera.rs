@@ -1,10 +1,85 @@
-use cgmath::{Rad, Point3, InnerSpace, SquareMatrix, Vector3, Zero};
+use std::rc::Rc;
+
+use cgmath::{Rad, Point3, InnerSpace, SquareMatrix, Vector3, Zero, Angle};
+use wgpu::util::DeviceExt;
 use winit::event::{WindowEvent, KeyboardInput, ElementState, VirtualKeyCode};
 
-use crate::{WINDOW_DIMENTIONS, PLAYER_ACCELERAION, OPENGL_TO_WGPU_MATRIX, object::{self, BLOCK_SIZE}, hitbox::{HitBox, self, HitPlane}};
+use crate::{WINDOW_DIMENTIONS, PLAYER_ACCELERAION, OPENGL_TO_WGPU_MATRIX, object::{self, BLOCK_SIZE}, hitbox::{HitBox, self, HitPlane}, bindgroup::BindGroupContainer};
 
 const PLAYER_SIZE: f32 = object::BLOCK_SIZE * 0.5;
 const GRAVITY: f32 = 0.015;
+
+/// A container for all tings camera related
+pub struct CameraContainer {
+    pub camera: Camera,
+    pub controller: CameraController,
+    pub uniform: CameraUniform,
+    pub buffer: wgpu::Buffer,
+    pub bind_group_container: BindGroupContainer,
+}
+
+impl CameraContainer {
+    pub fn new(device: &wgpu::Device, config: &wgpu::SurfaceConfiguration) -> Self {
+
+        let camera = Camera::default(config);
+
+        let controller = CameraController::new(&camera);
+
+        let mut uniform = CameraUniform::new();
+        uniform.update_view_proj(&camera);
+
+        let buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Camera Buffer"),
+            contents: bytemuck::cast_slice(&[uniform]),
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+        });
+
+        let bind_group_layout = Camera::get_bind_group_layout(device);
+        let bind_group = Camera::create_bind_group(device, &bind_group_layout, &buffer);
+        
+        let bind_group_container = BindGroupContainer::new(
+            Rc::new(bind_group_layout),
+            Rc::new(bind_group),
+        );
+
+        Self { 
+            camera, 
+            controller, 
+            uniform, 
+            buffer, 
+            bind_group_container,
+        }
+    }
+
+    fn process_events() {
+        todo!()
+    }
+
+    pub fn get_coords(&self) -> Point3<f32> {
+        self.camera.eye
+    }
+
+    pub fn update(&mut self, block_pos: &Vec<Vector3<f32>>) {
+        self.controller.update_camera(&mut self.camera, block_pos);
+        self.uniform.update_view_proj(&self.camera);
+    }
+
+    pub fn write_to_buffer(&self, queue: &wgpu::Queue) {
+        queue.write_buffer(&self.buffer, 0, bytemuck::cast_slice(&[self.uniform]));
+    }
+
+    pub fn get_bind_group(&self) -> &wgpu::BindGroup {
+        &self.bind_group_container.bind_group
+    }
+
+    pub fn get_bind_group_layout(&self) -> &wgpu::BindGroupLayout {
+        &self.bind_group_container.bind_group_layout
+    }
+
+    pub fn get_bind_group_container(&self) -> &BindGroupContainer {
+        &self.bind_group_container
+    }
+}
 
 #[derive(Debug, Copy, Clone)]
 pub enum MoveDirection {
@@ -44,6 +119,7 @@ pub struct CameraController {
     forward: cgmath::Vector3<f32>,
     yaw: cgmath::Rad<f32>,
     pitch: cgmath::Rad<f32>,
+    pub speed: f32,
 }
 
 impl CameraController {
@@ -56,6 +132,7 @@ impl CameraController {
             forward: cgmath::vec3(0.0, 0.0, 0.0),
             yaw: Rad(0.0),
             pitch: Rad(0.0),
+            speed: 0.5,
         }
     }
 
@@ -104,7 +181,9 @@ impl CameraController {
                         true
                     }
                     VirtualKeyCode::Return => {
-                        println!("pos: {:?}", self.pos);
+                        println!("Point3::new({}, {}, {}), \nVector3::new({}, {}, {})", self.pos.x, self.pos.y, self.pos.z, self.forward.x, self.forward.y, self.forward.z);
+                        // Point3::new(9.8622465, 6.799998, -7.546173), 
+                        // Vector3::new(-0.5000186, -0.41959614, 0.7575756)
                         true
                     }
                     _ => false,
@@ -122,9 +201,9 @@ impl CameraController {
 
     pub fn update_camera(&mut self, camera: &mut Camera, block_pos: &Vec<Vector3<f32>>) {
         self.acc = cgmath::vec3(
-            self.movement[0].into_f32() * 0.5,
-            self.movement[1].into_f32() * 3.0,
-            self.movement[2].into_f32() * 0.5,
+            self.movement[0].into_f32() * self.speed,
+            self.movement[1].into_f32() * self.speed,
+            self.movement[2].into_f32() * self.speed,
         ) * PLAYER_ACCELERAION;
 
         self.acc = cgmath::Matrix3::from_angle_y(-self.yaw) * self.acc;
@@ -259,7 +338,7 @@ impl Camera {
                 entries: &[
                     wgpu::BindGroupLayoutEntry {
                         binding: 0,
-                        visibility: wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT,
+                        visibility: wgpu::ShaderStages::all(),
                         ty: wgpu::BindingType::Buffer {
                             ty: wgpu::BufferBindingType::Uniform,
                             has_dynamic_offset: false,

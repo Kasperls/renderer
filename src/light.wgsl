@@ -13,7 +13,8 @@ struct InstanceInput {
 struct LightUniform {
     @location(0) color: vec4<f32>,
     @location(1) position: vec4<f32>,
-    @location(2) light_matrix: mat4x4<f32>,
+    @location(2) direction: vec4<f32>,
+    @location(3) light_matrix: mat4x4<f32>,
 };
 @group(0) @binding(0) var<uniform> light_uniform: LightUniform;
 
