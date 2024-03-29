@@ -1,0 +1,14 @@
+"filename", "language", "WGSL", "Rust", "XML", "CSV", "comment", "blank", "total"
+"c:\Users\kasp9\rust\renderer\res\maps\small_square\small_square_floor.csv", "CSV", 0, 0, 0, 9, 0, 1, 10
+"c:\Users\kasp9\rust\renderer\res\maps\small_square\small_square_wall0.csv", "CSV", 0, 0, 0, 9, 0, 1, 10
+"c:\Users\kasp9\rust\renderer\res\maps\small_square\small_square_wall1.csv", "CSV", 0, 0, 0, 9, 0, 1, 10
+"c:\Users\kasp9\rust\renderer\res\maps\small_square\small_square_wall2.csv", "CSV", 0, 0, 0, 9, 0, 1, 10
+"c:\Users\kasp9\rust\renderer\res\maps\small_square\x_small_square_roof.csv", "CSV", 0, 0, 0, 9, 0, 1, 10
+"c:\Users\kasp9\rust\renderer\res\small_square.tmx", "XML", 0, 0, 16, 0, 0, 1, 17
+"c:\Users\kasp9\rust\renderer\src\bindgroup.rs", "Rust", 0, 7, 0, 0, 0, 1, 8
+"c:\Users\kasp9\rust\renderer\src\camera.rs", "Rust", 0, 7, 0, 0, 1, 4, 12
+"c:\Users\kasp9\rust\renderer\src\lib.rs", "Rust", 0, 3, 0, 0, 0, 1, 4
+"c:\Users\kasp9\rust\renderer\src\light.rs", "Rust", 0, 2, 0, 0, 0, 0, 2
+"c:\Users\kasp9\rust\renderer\src\light.wgsl", "WGSL", 1, 0, 0, 0, 0, 0, 1
+"c:\Users\kasp9\rust\renderer\src\shader.wgsl", "WGSL", 5, 0, 0, 0, 0, 2, 7
+"Total", "-", 6, 19, 16, 45, 1, 14, 101

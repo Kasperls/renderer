@@ -49,10 +49,11 @@ pub fn get_block_box(pos: Vector3<f32>) -> BlockBox {
     BlockBox::new(pos)
 }
 
+/// Cube handler. Does not support other types of objects
 pub struct ObjectHandler {
     pub object: Object,
     texture_atlas: TextureAtlas,
-    pub instances: Vec<InstanceRaw>,
+    instances: Vec<InstanceRaw>,
     pub positions: Vec<Vector3<f32>>,
     pub atlas_offsets: Vec<[i32; 4]>
 }
@@ -67,9 +68,10 @@ impl ObjectHandler {
             positions: vec![],
             atlas_offsets: vec![]
         };
-
+        
         // obj_handler.read_position_data(MAP);
-        obj_handler.read_room_data(vec![room::Room::from_folder("C:/Users/kasp9/rust/renderer/res/maps/room1").unwrap()]);
+        // obj_handler.read_room_data(vec![room::Room::from_folder("C:/Users/kasp9/rust/renderer/res/maps/room1").unwrap()]);
+        obj_handler.read_room_data(vec![room::Room::read_complete_csv("C:/Users/kasp9/rust/renderer/res/maps/small_square.txt").unwrap()]);
         obj_handler.create_instances();
         obj_handler
         
@@ -78,35 +80,52 @@ impl ObjectHandler {
     pub fn read_room_data(&mut self, rooms: Vec<Room>) {
         // for hver block: self.positions.push(vec3) v self.atlas_offsets.push(atl_pos(vec2))
         for room in rooms {
-            for layer in 0..room.size[0] {
-                for line in 0..room.size[1] {
-                    for col in 0..room.size[2] {
-
-                        let layer_cost = room.data.len() / room.size[0];
-                        let idx = layer * layer_cost + line*room.size[2] + col;
-                        let block_id = room.data[idx];
-
-                        match block_id {
+            for (y, layer) in room.layers.iter().enumerate() {
+                for (z, row) in layer.iter().enumerate() {
+                    for (x, block) in row.iter().enumerate(){
+                        match block {
                             -1 => {
                                 continue;
                             }
                             _ => {
                                 self.positions.push(Vector3::new(
-                                    col as f32 * BLOCK_SIZE, 
-                                    layer as f32 * BLOCK_SIZE, 
-                                    line as f32 * BLOCK_SIZE,
+                                    x as f32 * BLOCK_SIZE, 
+                                    y as f32 * BLOCK_SIZE, 
+                                    z as f32 * BLOCK_SIZE,
                                 ));
-
-                                let alt_y = (block_id) / ATLAS_SIZE.0 as i32;
-                                let alt_x = block_id - alt_y*ATLAS_SIZE.0 as i32;
-        
+                                let alt_y = (block) / ATLAS_SIZE.0 as i32;
+                                let alt_x = block - alt_y*ATLAS_SIZE.0 as i32;
                                 self.atlas_offsets.push(atl_pos(1 + alt_x as i32, 1 + alt_y as i32))
                             }
                         }
-
                     }
                 }
             }
+
+            // for layer in 0..room.dim[0] {
+            //     for line in 0..room.dim[1] {
+            //         for col in 0..room.dim[2] {
+            //             let layer_cost = room.data.len() / room.size[0];
+            //             let idx = layer * layer_cost + line*room.size[2] + col;
+            //             let block_id = room.data[idx];
+            //             match block_id {
+            //                 -1 => {
+            //                     continue;
+            //                 }
+            //                 _ => {
+            //                     self.positions.push(Vector3::new(
+            //                         col as f32 * BLOCK_SIZE, 
+            //                         layer as f32 * BLOCK_SIZE, 
+            //                         line as f32 * BLOCK_SIZE,
+            //                     ));
+            //                     let alt_y = (block_id) / ATLAS_SIZE.0 as i32;
+            //                     let alt_x = block_id - alt_y*ATLAS_SIZE.0 as i32;
+            //                     self.atlas_offsets.push(atl_pos(1 + alt_x as i32, 1 + alt_y as i32))
+            //                 }
+            //             }
+            //         }
+            //     }
+            // }
         }
         // todo!()
     }
@@ -132,7 +151,7 @@ impl ObjectHandler {
     }
 
     pub fn load_texture_atlas(file_name: &str, device: &wgpu::Device, queue: &wgpu::Queue) -> anyhow::Result<TextureAtlas> {
-        let data = load_binary("texture_atlas.png").unwrap();
+        let data = load_binary(file_name).unwrap();
         let texture = texture::Texture::from_bytes(device, queue, &data, file_name).expect("failed to create texture");
 
         let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor { 

@@ -96,7 +96,7 @@ impl State {
 
         let (device, queue) = adapter.request_device(
             &wgpu::DeviceDescriptor {
-                features: wgpu::Features::MULTIVIEW,  
+                features: wgpu::Features::MULTIVIEW | wgpu::Features::ADDRESS_MODE_CLAMP_TO_BORDER,  
                 limits: if cfg!(target_arch = "wasm32") {
                     wgpu::Limits::downlevel_webgl2_defaults() 
                 } else {
@@ -145,7 +145,7 @@ impl State {
         // Load model
         let object_handler = object::ObjectHandler::new(
             resources::load_object("cube_smart.obj", &device).await.unwrap(),
-            ObjectHandler::load_texture_atlas("cube_smart.png", &device, &queue).unwrap(),
+            ObjectHandler::load_texture_atlas("texture_atlas1.png", &device, &queue).unwrap(),
         );
 
         // configure surface
@@ -212,14 +212,14 @@ impl State {
         // lighting buffers
         let light_uniforms = vec![
             LightUniform::new(
-                Vector3::new(0.9, 0.2, 0.7), 
+                Vector3::new(0.1, 0.2, 1.0), 
                 Point3::new(-2.7181466, 13.20014, -3.9281557), 
 Vector3::new(0.53910136, -0.6668692, 0.51444644)
             ),
             LightUniform::new(
-                Vector3::new(0.2, 1.0, 0.3), 
-                Point3::new(19.697975, 13.200004, 6.5290422), 
-Vector3::new(-0.66862667, -0.7110567, 0.21756993)
+                Vector3::new(1.0, 1.0, 1.0), 
+                Point3::new(-7.3450837, 8.74131, 11.7095585), 
+Vector3::new(0.7537466, -0.48293236, -0.44569337)
             ),
         ];
 
@@ -853,8 +853,8 @@ pub async fn run() {
     env_logger::init();
 
     let event_loop = EventLoop::new();
-    let window = WindowBuilder::new()
-    .with_inner_size(PhysicalSize::new(WINDOW_DIMENTIONS.0, WINDOW_DIMENTIONS.1))
+    let window = WindowBuilder::new().with_fullscreen(Some(winit::window::Fullscreen::Borderless(None)))
+    // .with_inner_size(PhysicalSize::new(WINDOW_DIMENTIONS.0, WINDOW_DIMENTIONS.1))
     .build(&event_loop)
     .unwrap();
 

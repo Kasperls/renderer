@@ -7,7 +7,7 @@ use winit::event::{WindowEvent, KeyboardInput, ElementState, VirtualKeyCode};
 use crate::{WINDOW_DIMENTIONS, PLAYER_ACCELERAION, OPENGL_TO_WGPU_MATRIX, object::{self, BLOCK_SIZE}, hitbox::{HitBox, self, HitPlane}, bindgroup::BindGroupContainer};
 
 const PLAYER_SIZE: f32 = object::BLOCK_SIZE * 0.5;
-const GRAVITY: f32 = 0.015;
+const GRAVITY: f32 = 0.0015;
 
 /// A container for all tings camera related
 pub struct CameraContainer {
@@ -241,10 +241,12 @@ impl CameraController {
         let collisions = self.get_collisions(block_pos);
         for block in collisions {
             if self.vel.x > 0.0 {
-                self.pos.x = block.x - BLOCK_SIZE / 2.0 - PLAYER_SIZE / 2.0
+                self.pos.x = block.x - BLOCK_SIZE / 2.0 - PLAYER_SIZE / 2.0;
+                self.acc.x = 0.0;
             }
             if self.vel.x < 0.0 {
-                self.pos.x = block.x + BLOCK_SIZE / 2.0 + PLAYER_SIZE / 2.0
+                self.pos.x = block.x + BLOCK_SIZE / 2.0 + PLAYER_SIZE / 2.0;
+                self.acc.x = 0.0;
             }
         }
 
@@ -252,10 +254,14 @@ impl CameraController {
         let collisions = self.get_collisions(block_pos);
         for block in collisions {
             if self.vel.y > 0.0 {
-                self.pos.y = block.y - BLOCK_SIZE / 2.0 - PLAYER_SIZE / 2.0
+                self.pos.y = block.y - BLOCK_SIZE / 2.0 - PLAYER_SIZE / 2.0;
+                self.acc.y = 0.0;
+
             }
             if self.vel.y < 0.0 {
-                self.pos.y = block.y + BLOCK_SIZE / 2.0 + PLAYER_SIZE / 2.0
+                self.pos.y = block.y + BLOCK_SIZE / 2.0 + PLAYER_SIZE / 2.0;
+                self.acc.y = 0.0;
+
             }
         }
 
@@ -263,10 +269,14 @@ impl CameraController {
         let collisions = self.get_collisions(block_pos);
         for block in collisions {
             if self.vel.z > 0.0 {
-                self.pos.z = block.z - BLOCK_SIZE / 2.0 - PLAYER_SIZE / 2.0
+                self.pos.z = block.z - BLOCK_SIZE / 2.0 - PLAYER_SIZE / 2.0;
+                self.acc.z = 0.0;
+
             }
             if self.vel.z < 0.0 {
-                self.pos.z = block.z + BLOCK_SIZE / 2.0 + PLAYER_SIZE / 2.0
+                self.pos.z = block.z + BLOCK_SIZE / 2.0 + PLAYER_SIZE / 2.0;
+                self.acc.z = 0.0;
+
             }
         }
     }
