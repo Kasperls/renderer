@@ -1,0 +1,10 @@
+dette er fil 1dette er fil 2import os
+
+path = "C:/Users/kasp9/rust/renderer/res/maps/room1/"
+path = "C:/Users/kasp9/python/room-parser/"
+
+with open("room", "w") as room_file:
+    for file in os.listdir(path):
+        print(file)
+        with open(path + file, "r") as layer_file:
+            room_file.write(layer_file.read())

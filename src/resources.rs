@@ -1,4 +1,4 @@
-use crate::{model, object, texture};
+use crate::{model, object, texture, light};
 use object::Object;
 
 use std::io::{BufReader, Cursor};
@@ -10,7 +10,7 @@ pub async fn load_texture(
     device: &wgpu::Device,
     queue: &wgpu::Queue,
 ) -> anyhow::Result<texture::Texture> {
-    let data = load_binary(file_name).await?;
+    let data = load_binary(file_name)?;
     texture::Texture::from_bytes(device, queue, &data, file_name)
 }
 
@@ -23,7 +23,7 @@ pub async fn load_string(file_name: &str) -> anyhow::Result<String> {
     Ok(txt)
 }
 
-pub async fn load_binary(file_name: &str) -> anyhow::Result<Vec<u8>> {
+pub fn load_binary(file_name: &str) -> anyhow::Result<Vec<u8>> {
     let path = std::path::Path::new(env!("OUT_DIR"))
         .join("res")
         .join(file_name);
@@ -116,13 +116,13 @@ pub async fn load_model(
 pub async fn load_object(
     file_name: &str,
     device: &wgpu::Device,
-    queue: &wgpu::Queue,
-    layout: &wgpu::BindGroupLayout,
+    // next fields needs to be added if object need textures or materials
+    // queue: &wgpu::Queue,
+    // layout: &wgpu::BindGroupLayout,
 ) -> anyhow::Result<Object> {
     let obj_text = load_string(file_name).await?;
     let obj_cursor = Cursor::new(obj_text);
     let mut obj_reader = BufReader::new(obj_cursor);
-
     let (models, obj_materials) = tobj::load_obj_buf_async(
         &mut obj_reader,
         &tobj::LoadOptions {
@@ -131,6 +131,7 @@ pub async fn load_object(
             ..Default::default()
         },
         |p| async move {
+            println!("Loading material: {}", p);
             let mat_text = load_string(&p).await.unwrap();
             tobj::load_mtl_buf(&mut BufReader::new(Cursor::new(mat_text)))
         },
@@ -156,6 +157,70 @@ pub async fn load_object(
                         m.mesh.normals[i * 3 + 2],
                     ],
                     depth: 1000.0,
+                }
+            ).collect::<Vec<_>>();
+
+            let vertex_buffer = device.create_buffer_init(
+                &wgpu::util::BufferInitDescriptor {
+                    label: Some(&format!("{} vertex buffer", file_name)),
+                    contents: bytemuck::cast_slice(&vertices),
+                    usage: wgpu::BufferUsages::VERTEX,
+                }
+            );
+
+            let index_buffer = device.create_buffer_init(
+                &wgpu::util::BufferInitDescriptor {
+                    label: Some(&format!("{} index buffer", file_name)),
+                    contents: bytemuck::cast_slice(&m.mesh.indices),
+                    usage: wgpu::BufferUsages::INDEX,
+                }
+            );
+            object::Mesh {
+                name: file_name.to_string(),
+                vertex_buffer,
+                index_buffer,
+                num_elements: m.mesh.indices.len() as u32,
+            }
+        }
+    ).collect::<Vec<_>>();
+
+    Ok(Object { meshes })
+}
+
+pub async fn load_light_obj(
+    file_name: &str,
+    device: &wgpu::Device,
+    // next fields needs to be added if object need textures or materials
+    // queue: &wgpu::Queue,
+    // layout: &wgpu::BindGroupLayout,
+) -> anyhow::Result<Object> {
+    let obj_text = load_string(file_name).await?;
+    let obj_cursor = Cursor::new(obj_text);
+    let mut obj_reader = BufReader::new(obj_cursor);
+    let (models, obj_materials) = tobj::load_obj_buf_async(
+        &mut obj_reader,
+        &tobj::LoadOptions {
+            triangulate: true,
+            single_index: true,
+            ..Default::default()
+        },
+        |p| async move {
+            println!("Loading material: {}", p);
+            let mat_text = load_string(&p).await.unwrap();
+            tobj::load_mtl_buf(&mut BufReader::new(Cursor::new(mat_text)))
+        },
+    ).await?;
+
+    let meshes = models
+        .into_iter()
+        .map(|m| {
+            let vertices = (0..m.mesh.positions.len() / 3)
+                .map(|i| light::LightVertex {
+                    position: [
+                        m.mesh.positions[i * 3],
+                        m.mesh.positions[i * 3 + 1],
+                        m.mesh.positions[i * 3 + 2],
+                    ],
                 }
             ).collect::<Vec<_>>();
 

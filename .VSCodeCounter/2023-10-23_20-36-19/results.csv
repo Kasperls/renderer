@@ -1,0 +1,40 @@
+"filename", "language", "WGSL", "Rust", "XML", "Wavefront (MTL)", "CSV", "Wavefront (OBJ)", "comment", "blank", "total"
+"c:\Users\kasp9\rust\renderer\build.rs", "Rust", 0, 14, 0, 0, 0, 0, 1, 5, 20
+"c:\Users\kasp9\rust\renderer\res\ball.mtl", "Wavefront (MTL)", 0, 0, 0, 10, 0, 0, 2, 1, 13
+"c:\Users\kasp9\rust\renderer\res\ball.obj", "Wavefront (OBJ)", 0, 0, 0, 0, 0, 462, 2, 1, 465
+"c:\Users\kasp9\rust\renderer\res\cube_smart.mtl", "Wavefront (MTL)", 0, 0, 0, 10, 0, 0, 2, 2, 14
+"c:\Users\kasp9\rust\renderer\res\cube_smart.obj", "Wavefront (OBJ)", 0, 0, 0, 0, 0, 40, 2, 1, 43
+"c:\Users\kasp9\rust\renderer\res\maps\room1\test_floor.csv", "CSV", 0, 0, 0, 0, 15, 0, 0, 1, 16
+"c:\Users\kasp9\rust\renderer\res\maps\room1\test_walls1.csv", "CSV", 0, 0, 0, 0, 15, 0, 0, 1, 16
+"c:\Users\kasp9\rust\renderer\res\maps\room1\test_walls2.csv", "CSV", 0, 0, 0, 0, 15, 0, 0, 1, 16
+"c:\Users\kasp9\rust\renderer\res\maps\room1\test_walls3.csv", "CSV", 0, 0, 0, 0, 15, 0, 0, 1, 16
+"c:\Users\kasp9\rust\renderer\res\maps\room1\test_walls4.csv", "CSV", 0, 0, 0, 0, 15, 0, 0, 1, 16
+"c:\Users\kasp9\rust\renderer\res\maps\room2\room2_l1.csv", "CSV", 0, 0, 0, 0, 7, 0, 0, 1, 8
+"c:\Users\kasp9\rust\renderer\res\maps\room2\room2_l2.csv", "CSV", 0, 0, 0, 0, 7, 0, 0, 1, 8
+"c:\Users\kasp9\rust\renderer\res\maps\room2\room2_l3.csv", "CSV", 0, 0, 0, 0, 7, 0, 0, 1, 8
+"c:\Users\kasp9\rust\renderer\res\models\cube.mtl", "Wavefront (MTL)", 0, 0, 0, 11, 0, 0, 2, 2, 15
+"c:\Users\kasp9\rust\renderer\res\models\cube.obj", "Wavefront (OBJ)", 0, 0, 0, 0, 0, 931, 2, 1, 934
+"c:\Users\kasp9\rust\renderer\res\room2.tmx", "XML", 0, 0, 40, 0, 0, 0, 0, 1, 41
+"c:\Users\kasp9\rust\renderer\res\test.tmx", "XML", 0, 0, 103, 0, 0, 0, 0, 1, 104
+"c:\Users\kasp9\rust\renderer\src\bindgroup.rs", "Rust", 0, 15, 0, 0, 0, 0, 0, 2, 17
+"c:\Users\kasp9\rust\renderer\src\camera.rs", "Rust", 0, 327, 0, 0, 0, 0, 3, 52, 382
+"c:\Users\kasp9\rust\renderer\src\globals.rs", "Rust", 0, 56, 0, 0, 0, 0, 0, 6, 62
+"c:\Users\kasp9\rust\renderer\src\hitbox.rs", "Rust", 0, 42, 0, 0, 0, 0, 1, 7, 50
+"c:\Users\kasp9\rust\renderer\src\hud.rs", "Rust", 0, 212, 0, 0, 0, 0, 12, 33, 257
+"c:\Users\kasp9\rust\renderer\src\hud.wgsl", "WGSL", 29, 0, 0, 0, 0, 0, 0, 8, 37
+"c:\Users\kasp9\rust\renderer\src\lib.rs", "Rust", 0, 763, 0, 0, 0, 0, 45, 105, 913
+"c:\Users\kasp9\rust\renderer\src\light-obj.wgsl", "WGSL", 37, 0, 0, 0, 0, 0, 0, 5, 42
+"c:\Users\kasp9\rust\renderer\src\light.rs", "Rust", 0, 268, 0, 0, 0, 0, 1, 25, 294
+"c:\Users\kasp9\rust\renderer\src\light.wgsl", "WGSL", 49, 0, 0, 0, 0, 0, 0, 10, 59
+"c:\Users\kasp9\rust\renderer\src\lowres.wgsl", "WGSL", 28, 0, 0, 0, 0, 0, 7, 8, 43
+"c:\Users\kasp9\rust\renderer\src\main.rs", "Rust", 0, 16, 0, 0, 0, 0, 7, 8, 31
+"c:\Users\kasp9\rust\renderer\src\model.rs", "Rust", 0, 118, 0, 0, 0, 0, 1, 13, 132
+"c:\Users\kasp9\rust\renderer\src\object.rs", "Rust", 0, 297, 0, 0, 0, 0, 11, 38, 346
+"c:\Users\kasp9\rust\renderer\src\pipelines.rs", "Rust", 0, 225, 0, 0, 0, 0, 4, 36, 265
+"c:\Users\kasp9\rust\renderer\src\player.rs", "Rust", 0, 0, 0, 0, 0, 0, 0, 1, 1
+"c:\Users\kasp9\rust\renderer\src\resources.rs", "Rust", 0, 221, 0, 0, 0, 0, 6, 25, 252
+"c:\Users\kasp9\rust\renderer\src\room.rs", "Rust", 0, 40, 0, 0, 0, 0, 3, 9, 52
+"c:\Users\kasp9\rust\renderer\src\shader.wgsl", "WGSL", 115, 0, 0, 0, 0, 0, 3, 27, 145
+"c:\Users\kasp9\rust\renderer\src\shadow.wgsl", "WGSL", 0, 0, 0, 0, 0, 0, 3, 2, 5
+"c:\Users\kasp9\rust\renderer\src\texture.rs", "Rust", 0, 123, 0, 0, 0, 0, 1, 11, 135
+"Total", "-", 258, 2737, 143, 31, 96, 1433, 121, 454, 5273

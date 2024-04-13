@@ -1,7 +1,8 @@
+use std::process::id;
+
 use cgmath::{prelude::*, Vector3};
 use wgpu::util::DeviceExt;
-use winit::event::ScanCode;
-use crate::{texture, resources::load_binary};
+use crate::{texture, resources::load_binary, room::{self, Room}};
 
 const SCALE_MATRIX: cgmath::Matrix4<f32> = cgmath::Matrix4::new(
     0.5, 0.0, 0.0, 0.0,
@@ -10,162 +11,45 @@ const SCALE_MATRIX: cgmath::Matrix4<f32> = cgmath::Matrix4::new(
     0.0, 0.0, 0.0, 1.0
 );
 
-const TILE_SIZE: i32 = 16;
+const TEX_TILE_SIZE: i32 = 16;
+pub const BLOCK_SIZE: f32 = 1.0;
+/// (width, height)
+const ATLAS_SIZE: (usize,usize) = (24, 24);
 
-const MAP: [[[u8; 9]; 8]; 8] = [
-    [
-        [2, 2, 2, 2, 2, 2, 2, 2, 1], 
-        [2, 2, 2, 2, 2, 2, 2, 2, 1], 
-        [2, 2, 2, 2, 2, 2, 2, 2, 1], 
-        [2, 2, 2, 2, 2, 2, 2, 2, 1], 
-        [2, 2, 2, 2, 2, 2, 2, 2, 1], 
-        [2, 2, 2, 2, 2, 2, 2, 2, 1], 
-        [2, 2, 2, 2, 2, 2, 2, 2, 1], 
-        [2, 2, 2, 2, 2, 2, 2, 2, 1]
-    ],[
-        [1, 0, 0, 1, 1, 0, 0, 1, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [1, 0, 0, 1, 1, 0, 0, 1, 1]
-    ],[
-        [1, 0, 0, 1, 1, 0, 0, 1, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [1, 0, 0, 1, 1, 0, 0, 1, 1]
-    ],[
-        [1, 0, 0, 1, 1, 0, 0, 1, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [1, 0, 0, 1, 1, 0, 0, 1, 1]
-    ],[
-        [1, 0, 0, 1, 1, 0, 0, 1, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [1, 0, 0, 1, 1, 0, 0, 1, 1]
-    ],[
-        [1, 0, 0, 1, 1, 0, 0, 1, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [1, 0, 0, 1, 1, 0, 0, 1, 1]
-    ],[
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1]
-    ],[
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 1]
-    ],
-    
-];
+#[derive(Debug)]
+pub struct BlockBox {
+    pub bounds: [Vector3<f32>; 2]
+}
 
-const MAP1: [[[u8; 9]; 8]; 8] = [
-    [
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-    ],[
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-    ],[
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-    ],[
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-[0, 0, 0, 0, 0, 0, 0, 0, 0],
-[0, 0, 0, 0, 0, 0, 0, 0, 0],
-[0, 0, 0, 0, 0, 0, 0, 0, 0],
-[0, 0, 0, 0, 0, 0, 0, 0, 0],
-[0, 0, 0, 0, 0, 0, 0, 0, 0],
-[0, 0, 0, 0, 0, 0, 0, 0, 0],
-[0, 0, 0, 0, 0, 0, 0, 0, 0],
-    ],[
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-    ],[
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-    ],[
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-[0, 0, 0, 0, 0, 0, 0, 0, 0],
-[0, 0, 0, 0, 0, 0, 0, 0, 0],
-[0, 0, 0, 0, 0, 0, 0, 0, 0],
-[0, 0, 0, 0, 0, 0, 0, 0, 0],
-[0, 0, 0, 0, 0, 0, 0, 0, 0],
-[0, 0, 0, 0, 0, 0, 0, 0, 0],
-[0, 0, 0, 0, 0, 0, 0, 0, 0],
-    ],[
-        [0, 0, 0, 0, 0, 0, 0, 0, 0], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 0], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 0], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 0], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 0], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 0], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 0], 
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-    ],
-    
-];
+impl BlockBox {
+    fn new(pos: Vector3<f32>) -> Self {
+        let offset = BLOCK_SIZE * 0.5;
+        Self { 
+            bounds: [
+                Vector3::new(pos.x - offset, pos.y - offset, pos.z - offset),
+                Vector3::new(pos.x + offset, pos.y + offset, pos.z + offset),
+            ]
+        }
+    }
 
+    pub fn collide(&self, pos: Vector3<f32>) -> bool {
+        let mut count: u8 = 0;
+        if self.bounds[0].x < pos.x && pos.x < self.bounds[1].x {count += 1};
+        if self.bounds[0].y < pos.y && pos.y < self.bounds[1].y {count += 1};
+        if self.bounds[0].z < pos.z && pos.z < self.bounds[1].z {count += 1};
+
+        if count == 3 {
+            return true;
+        }
+        return false;
+    }
+}
+// litt spagetti
+pub fn get_block_box(pos: Vector3<f32>) -> BlockBox {
+    BlockBox::new(pos)
+}
+
+/// Cube handler. Does not support other types of objects
 pub struct ObjectHandler {
     pub object: Object,
     texture_atlas: TextureAtlas,
@@ -184,11 +68,66 @@ impl ObjectHandler {
             positions: vec![],
             atlas_offsets: vec![]
         };
-
-        obj_handler.read_position_data(MAP);
+        
+        // obj_handler.read_position_data(MAP);
+        // obj_handler.read_room_data(vec![room::Room::from_folder("C:/Users/kasp9/rust/renderer/res/maps/room1").unwrap()]);
+        obj_handler.read_room_data(vec![room::Room::read_complete_csv("C:/Users/kasp9/rust/renderer/res/maps/small_square.txt").unwrap()]);
         obj_handler.create_instances();
         obj_handler
         
+    }
+
+    pub fn read_room_data(&mut self, rooms: Vec<Room>) {
+        // for hver block: self.positions.push(vec3) v self.atlas_offsets.push(atl_pos(vec2))
+        for room in rooms {
+            for (y, layer) in room.layers.iter().enumerate() {
+                for (z, row) in layer.iter().enumerate() {
+                    for (x, block) in row.iter().enumerate(){
+                        match block {
+                            -1 => {
+                                continue;
+                            }
+                            _ => {
+                                self.positions.push(Vector3::new(
+                                    x as f32 * BLOCK_SIZE, 
+                                    y as f32 * BLOCK_SIZE, 
+                                    z as f32 * BLOCK_SIZE,
+                                ));
+                                let alt_y = (block) / ATLAS_SIZE.0 as i32;
+                                let alt_x = block - alt_y*ATLAS_SIZE.0 as i32;
+                                self.atlas_offsets.push(atl_pos(1 + alt_x as i32, 1 + alt_y as i32))
+                            }
+                        }
+                    }
+                }
+            }
+
+            // for layer in 0..room.dim[0] {
+            //     for line in 0..room.dim[1] {
+            //         for col in 0..room.dim[2] {
+            //             let layer_cost = room.data.len() / room.size[0];
+            //             let idx = layer * layer_cost + line*room.size[2] + col;
+            //             let block_id = room.data[idx];
+            //             match block_id {
+            //                 -1 => {
+            //                     continue;
+            //                 }
+            //                 _ => {
+            //                     self.positions.push(Vector3::new(
+            //                         col as f32 * BLOCK_SIZE, 
+            //                         layer as f32 * BLOCK_SIZE, 
+            //                         line as f32 * BLOCK_SIZE,
+            //                     ));
+            //                     let alt_y = (block_id) / ATLAS_SIZE.0 as i32;
+            //                     let alt_x = block_id - alt_y*ATLAS_SIZE.0 as i32;
+            //                     self.atlas_offsets.push(atl_pos(1 + alt_x as i32, 1 + alt_y as i32))
+            //                 }
+            //             }
+            //         }
+            //     }
+            // }
+        }
+        // todo!()
     }
 
     pub fn create_instance_buffer(&self, device: &wgpu::Device) -> wgpu::Buffer {
@@ -211,28 +150,8 @@ impl ObjectHandler {
         }
     }
 
-    fn read_position_data(&mut self, object_array: [[[u8; 9]; 8]; 8]) {
-        for x in 0..8 {
-            for y in 0..8 {
-                for z in 0..9 {
-                    match object_array[x][y][z] {
-                        1 => {
-                            self.positions.push(Vector3::new(z as f32, x as f32, y as f32));
-                            self.atlas_offsets.push(atl_pos(6, 6));
-                        },
-                        2 => {
-                            self.positions.push(Vector3::new(z as f32, x as f32, y as f32));
-                            self.atlas_offsets.push(atl_pos(6, 7));
-                        }
-                        _ => {}
-                    }
-                }
-            }
-        }
-    }
-
-    pub async fn load_texture_atlas(file_name: &str, device: &wgpu::Device, queue: &wgpu::Queue) -> anyhow::Result<TextureAtlas> {
-        let data = load_binary("texture_atlas.png").await.unwrap();
+    pub fn load_texture_atlas(file_name: &str, device: &wgpu::Device, queue: &wgpu::Queue) -> anyhow::Result<TextureAtlas> {
+        let data = load_binary(file_name).unwrap();
         let texture = texture::Texture::from_bytes(device, queue, &data, file_name).expect("failed to create texture");
 
         let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor { 
@@ -282,7 +201,7 @@ impl ObjectHandler {
 }
 
 fn atl_pos(x: i32, y: i32) -> [i32; 4] {
-    return [x * TILE_SIZE, y * TILE_SIZE, (x-1) * TILE_SIZE, (y-1) * TILE_SIZE];
+    return [x * TEX_TILE_SIZE, y * TEX_TILE_SIZE, (x-1) * TEX_TILE_SIZE, (y-1) * TEX_TILE_SIZE];
 }
 
 pub struct Mesh {
@@ -313,7 +232,7 @@ impl Instance {
             model: (
                 cgmath::Matrix4::from_translation(self.position) * 
                 cgmath::Matrix4::from(self.rotation) * 
-                SCALE_MATRIX
+                (SCALE_MATRIX * BLOCK_SIZE)
             ).into(),
             normal: cgmath::Matrix3::from(self.rotation).into(),
             atlas_rect: self.atlas_rect,
@@ -322,10 +241,13 @@ impl Instance {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
+#[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable, Debug)]
 pub struct InstanceRaw {
+    // position from matrix
     pub model: [[f32; 4]; 4],
+    // normal from matrix
     pub normal: [[f32; 3]; 3],
+    // atlas rect
     pub atlas_rect: [i32; 4],
 }
 
@@ -392,24 +314,6 @@ impl <'a, 'b> DrawObject<'b> for wgpu::RenderPass<'a>
 where
     'b: 'a,
 {
-    // fn new_draw_mesh_instanced(&mut self, mesh: &'b Mesh, material: &'b Material, instances: std::ops::Range<u32>, camera_bind_group: &'b wgpu::BindGroup) {
-    //     self.set_vertex_buffer(0, mesh.vertex_buffer.slice(..));
-    //     self.set_index_buffer(mesh.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
-    //     self.set_bind_group(0, &material.bind_group, &[]);
-    //     self.set_bind_group(1, camera_bind_group, &[]);
-    //     self.draw_indexed(0..mesh.num_elements, 0, instances);
-    // }
-    // fn new_draw_object_instanced(&mut self, object: &'b Object, instance_buffer: &'b wgpu::Buffer, camera_bind_group: &'b wgpu::BindGroup) {
-    //     // let instances = 0..object.meshes.len() as u32;
-    //     let instances = instance_buffer.size() / std::mem::size_of::<InstanceRaw>() as u64;
-    //     self.set_vertex_buffer(1, instance_buffer.slice(..));
-
-    //     for mesh in &object.meshes {
-    //         let material = &object.materials[mesh.material];
-    //         self.new_draw_mesh_instanced(mesh, material, 0..instances as u32, camera_bind_group);
-    //     }
-    // }
-
     fn draw_mesh_instanced(&mut self, mesh: &'b Mesh, instances: std::ops::Range<u32>, camera_bind_group: &'b wgpu::BindGroup) {
         self.set_vertex_buffer(0, mesh.vertex_buffer.slice(..));
         self.set_index_buffer(mesh.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
@@ -430,7 +334,7 @@ where
 }
 
 impl Object {
-    pub fn get_bind_group_layout(device: &wgpu::Device) -> wgpu::BindGroupLayout {
+    pub fn get_textured_bind_group_layout(device: &wgpu::Device) -> wgpu::BindGroupLayout {
         device.create_bind_group_layout(
             &wgpu::BindGroupLayoutDescriptor { 
                 entries: &[

@@ -1,5 +1,5 @@
 use cgmath::{Vector2, Vector3, Vector4};
-use crate::texture;
+use crate::{texture, resources::load_binary};
 use wgpu::util::DeviceExt;
 
 
@@ -21,6 +21,7 @@ impl HudContainer {
         let hud_bind_group_layouts = hud_elements.iter().map(| elm | {
             elm.as_ref().get_bind_group_layout()
         }).collect::<Vec<_>>();
+        // println!("{}", hud_bind_group_layouts.len());
 
         // create hud pipeline
         let hud_shader = device.create_shader_module( wgpu::ShaderModuleDescriptor { 
@@ -47,7 +48,7 @@ impl HudContainer {
                 entry_point: "fs_main", 
                 targets: &[Some(wgpu::ColorTargetState {
                     format: config.format,
-                    blend: Some(wgpu::BlendState::REPLACE),
+                    blend: Some(wgpu::BlendState::ALPHA_BLENDING),
                     write_mask: wgpu::ColorWrites::ALL,
                 })],
             }),
@@ -71,14 +72,6 @@ impl HudContainer {
 
         let (vertex_buffer, index_buffer) = Self::create_buffers(device);
 
-        // let proj_matrix = cgmath::ortho(
-        // (config.width/2) as f32 * -1.0, 
-        // (config.width/2) as f32, 
-        // (config.height/2) as f32 * -1.0, 
-        // (config.height/2) as f32, 
-        // 0.1, 
-        // 100.0);
-
         Self {
             hud_elements,
             pipeline,
@@ -96,10 +89,10 @@ impl HudContainer {
 
     pub fn create_buffers(device: &wgpu::Device) -> (wgpu::Buffer, wgpu::Buffer) {
         let vertices = [
-            HudVertex { position: [-0.1, -0.1, 0.5], },
-            HudVertex { position: [0.1, -0.1, 0.5], },
-            HudVertex { position: [0.1, 0.1, 0.5], },
-            HudVertex { position: [-0.1, 0.1, 0.5], },
+            HudVertex { position: [-1.0, -1.0, 0.3], },
+            HudVertex { position: [1.0, -1.0, 0.3], },
+            HudVertex { position: [1.0, 1.0, 0.3], },
+            HudVertex { position: [-1.0, 1.0, 0.3], },
         ];
 
         let indices = [
@@ -143,7 +136,8 @@ pub trait HudElement {
 
 impl dyn HudElement {
     pub fn create_crosshair(device: &wgpu::Device, queue: &wgpu::Queue, config: &wgpu::SurfaceConfiguration) -> Box<dyn HudElement> {
-        let texture = texture::Texture::from_bytes(device, queue, include_bytes!("../res/crosshair.png"), "crosshair.png").unwrap();
+        let data = load_binary("C:/Users/kasp9/rust/renderer/res/crosshair.png").expect("couldn't load image");
+        let texture = texture::Texture::from_bytes(device, queue, &data, "crosshair.png").unwrap();
         let size = Vector2::new(0.1, 0.1);
         let position = Vector2::new(config.height / 2, config.width / 2);
 
@@ -156,9 +150,7 @@ impl dyn HudElement {
                     ty: wgpu::BindingType::Texture { 
                         multisampled: false, 
                         view_dimension: wgpu::TextureViewDimension::D2, 
-                        sample_type: wgpu::TextureSampleType::Float { 
-                            filterable: true 
-                        }, 
+                        sample_type: wgpu::TextureSampleType::Float { filterable: true }
                     }, 
                     count: None, 
                 },

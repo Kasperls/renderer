@@ -1,0 +1,82 @@
+Date : 2023-10-24 21:02:56
+Directory : c:\Users\kasp9\rust\renderer
+Total : 44 files,  4784 codes, 122 comments, 468 blanks, all 5374 lines
+
+Languages
++-----------------+------------+------------+------------+------------+------------+
+| language        | files      | code       | comment    | blank      | total      |
++-----------------+------------+------------+------------+------------+------------+
+| Rust            |         16 |      2,756 |         97 |        382 |      3,235 |
+| Wavefront (OBJ) |          3 |      1,433 |          6 |          3 |      1,442 |
+| WGSL            |          6 |        264 |         13 |         62 |        339 |
+| XML             |          3 |        159 |          0 |          3 |        162 |
+| CSV             |         13 |        141 |          0 |         13 |        154 |
+| Wavefront (MTL) |          3 |         31 |          6 |          5 |         42 |
++-----------------+------------+------------+------------+------------+------------+
+
+Directories
++----------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| path                                                                       | files      | code       | comment    | blank      | total      |
++----------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| .                                                                          |         44 |      4,784 |        122 |        468 |      5,374 |
+| . (Files)                                                                  |          1 |         14 |          1 |          5 |         20 |
+| res                                                                        |         22 |      1,764 |         12 |         24 |      1,800 |
+| res (Files)                                                                |          7 |        681 |          8 |          8 |        697 |
+| res\maps                                                                   |         13 |        141 |          0 |         13 |        154 |
+| res\maps\room1                                                             |          5 |         75 |          0 |          5 |         80 |
+| res\maps\room2                                                             |          3 |         21 |          0 |          3 |         24 |
+| res\maps\small_square                                                      |          5 |         45 |          0 |          5 |         50 |
+| res\models                                                                 |          2 |        942 |          4 |          3 |        949 |
+| src                                                                        |         21 |      3,006 |        109 |        439 |      3,554 |
++----------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++----------------------------------------------------------------------------+-----------------+------------+------------+------------+------------+
+| filename                                                                   | language        | code       | comment    | blank      | total      |
++----------------------------------------------------------------------------+-----------------+------------+------------+------------+------------+
+| c:\Users\kasp9\rust\renderer\build.rs                                      | Rust            |         14 |          1 |          5 |         20 |
+| c:\Users\kasp9\rust\renderer\res\ball.mtl                                  | Wavefront (MTL) |         10 |          2 |          1 |         13 |
+| c:\Users\kasp9\rust\renderer\res\ball.obj                                  | Wavefront (OBJ) |        462 |          2 |          1 |        465 |
+| c:\Users\kasp9\rust\renderer\res\cube_smart.mtl                            | Wavefront (MTL) |         10 |          2 |          2 |         14 |
+| c:\Users\kasp9\rust\renderer\res\cube_smart.obj                            | Wavefront (OBJ) |         40 |          2 |          1 |         43 |
+| c:\Users\kasp9\rust\renderer\res\maps\room1\test_floor.csv                 | CSV             |         15 |          0 |          1 |         16 |
+| c:\Users\kasp9\rust\renderer\res\maps\room1\test_walls1.csv                | CSV             |         15 |          0 |          1 |         16 |
+| c:\Users\kasp9\rust\renderer\res\maps\room1\test_walls2.csv                | CSV             |         15 |          0 |          1 |         16 |
+| c:\Users\kasp9\rust\renderer\res\maps\room1\test_walls3.csv                | CSV             |         15 |          0 |          1 |         16 |
+| c:\Users\kasp9\rust\renderer\res\maps\room1\test_walls4.csv                | CSV             |         15 |          0 |          1 |         16 |
+| c:\Users\kasp9\rust\renderer\res\maps\room2\room2_l1.csv                   | CSV             |          7 |          0 |          1 |          8 |
+| c:\Users\kasp9\rust\renderer\res\maps\room2\room2_l2.csv                   | CSV             |          7 |          0 |          1 |          8 |
+| c:\Users\kasp9\rust\renderer\res\maps\room2\room2_l3.csv                   | CSV             |          7 |          0 |          1 |          8 |
+| c:\Users\kasp9\rust\renderer\res\maps\small_square\small_square_floor.csv  | CSV             |          9 |          0 |          1 |         10 |
+| c:\Users\kasp9\rust\renderer\res\maps\small_square\small_square_wall0.csv  | CSV             |          9 |          0 |          1 |         10 |
+| c:\Users\kasp9\rust\renderer\res\maps\small_square\small_square_wall1.csv  | CSV             |          9 |          0 |          1 |         10 |
+| c:\Users\kasp9\rust\renderer\res\maps\small_square\small_square_wall2.csv  | CSV             |          9 |          0 |          1 |         10 |
+| c:\Users\kasp9\rust\renderer\res\maps\small_square\x_small_square_roof.csv | CSV             |          9 |          0 |          1 |         10 |
+| c:\Users\kasp9\rust\renderer\res\models\cube.mtl                           | Wavefront (MTL) |         11 |          2 |          2 |         15 |
+| c:\Users\kasp9\rust\renderer\res\models\cube.obj                           | Wavefront (OBJ) |        931 |          2 |          1 |        934 |
+| c:\Users\kasp9\rust\renderer\res\room2.tmx                                 | XML             |         40 |          0 |          1 |         41 |
+| c:\Users\kasp9\rust\renderer\res\small_square.tmx                          | XML             |         16 |          0 |          1 |         17 |
+| c:\Users\kasp9\rust\renderer\res\test.tmx                                  | XML             |        103 |          0 |          1 |        104 |
+| c:\Users\kasp9\rust\renderer\src\bindgroup.rs                              | Rust            |         22 |          0 |          3 |         25 |
+| c:\Users\kasp9\rust\renderer\src\camera.rs                                 | Rust            |        334 |          4 |         56 |        394 |
+| c:\Users\kasp9\rust\renderer\src\globals.rs                                | Rust            |         56 |          0 |          6 |         62 |
+| c:\Users\kasp9\rust\renderer\src\hitbox.rs                                 | Rust            |         42 |          1 |          7 |         50 |
+| c:\Users\kasp9\rust\renderer\src\hud.rs                                    | Rust            |        212 |         12 |         33 |        257 |
+| c:\Users\kasp9\rust\renderer\src\hud.wgsl                                  | WGSL            |         29 |          0 |          8 |         37 |
+| c:\Users\kasp9\rust\renderer\src\lib.rs                                    | Rust            |        766 |         45 |        106 |        917 |
+| c:\Users\kasp9\rust\renderer\src\light-obj.wgsl                            | WGSL            |         37 |          0 |          5 |         42 |
+| c:\Users\kasp9\rust\renderer\src\light.rs                                  | Rust            |        270 |          1 |         25 |        296 |
+| c:\Users\kasp9\rust\renderer\src\light.wgsl                                | WGSL            |         50 |          0 |         10 |         60 |
+| c:\Users\kasp9\rust\renderer\src\lowres.wgsl                               | WGSL            |         28 |          7 |          8 |         43 |
+| c:\Users\kasp9\rust\renderer\src\main.rs                                   | Rust            |         16 |          7 |          8 |         31 |
+| c:\Users\kasp9\rust\renderer\src\model.rs                                  | Rust            |        118 |          1 |         13 |        132 |
+| c:\Users\kasp9\rust\renderer\src\object.rs                                 | Rust            |        297 |         11 |         38 |        346 |
+| c:\Users\kasp9\rust\renderer\src\pipelines.rs                              | Rust            |        225 |          4 |         36 |        265 |
+| c:\Users\kasp9\rust\renderer\src\player.rs                                 | Rust            |          0 |          0 |          1 |          1 |
+| c:\Users\kasp9\rust\renderer\src\resources.rs                              | Rust            |        221 |          6 |         25 |        252 |
+| c:\Users\kasp9\rust\renderer\src\room.rs                                   | Rust            |         40 |          3 |          9 |         52 |
+| c:\Users\kasp9\rust\renderer\src\shader.wgsl                               | WGSL            |        120 |          3 |         29 |        152 |
+| c:\Users\kasp9\rust\renderer\src\shadow.wgsl                               | WGSL            |          0 |          3 |          2 |          5 |
+| c:\Users\kasp9\rust\renderer\src\texture.rs                                | Rust            |        123 |          1 |         11 |        135 |
+| Total                                                                      |                 |      4,784 |        122 |        468 |      5,374 |
++----------------------------------------------------------------------------+-----------------+------------+------------+------------+------------+
