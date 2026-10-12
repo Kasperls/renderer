@@ -71,7 +71,7 @@ impl ObjectHandler {
         
         // obj_handler.read_position_data(MAP);
         // obj_handler.read_room_data(vec![room::Room::from_folder("C:/Users/kasp9/rust/renderer/res/maps/room1").unwrap()]);
-        obj_handler.read_room_data(vec![room::Room::read_complete_csv("C:/Users/kasp9/rust/renderer/res/maps/small_square.txt").unwrap()]);
+        obj_handler.read_room_data(vec![room::Room::read_complete_csv("C:/Users/kaspe/rust/renderer/res/maps/small_square.txt").unwrap()]);
         obj_handler.create_instances();
         obj_handler
         

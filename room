@@ -1,7 +1,7 @@
 dette er fil 1dette er fil 2import os
 
-path = "C:/Users/kasp9/rust/renderer/res/maps/room1/"
-path = "C:/Users/kasp9/python/room-parser/"
+path = "C:/Users/kaspe/rust/renderer/res/maps/room1/"
+path = "C:/Users/kaspe/python/room-parser/"
 
 with open("room", "w") as room_file:
     for file in os.listdir(path):

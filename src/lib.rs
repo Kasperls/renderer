@@ -38,7 +38,7 @@ mod pipelines;
 
 const PLAYER_ACCELERAION: f32 = 0.04;
 const WINDOW_DIMENTIONS: (u32, u32) = (1280, 720);
-const SHADOW_MAP_FACTOR: f32 = 5.0;
+const SHADOW_MAP_FACTOR: f32 = 2.0;
 const _TARGET_FPS: u32 = 10;
 const NUM_LIGHTS: u64 = 2;
 const MAX_LIGHTS: u64 = 10;
@@ -109,8 +109,10 @@ impl State {
 
         let surface_caps = surface.get_capabilities(&adapter);
 
-        let surface_format = surface_caps.formats.iter()
-        .copied().find(|f| f.is_srgb())
+        let surface_format = surface_caps.formats
+        .iter()
+        .copied()
+        .find(|f| f.is_srgb())
         .unwrap_or(surface_caps.formats[0]);
         
         let config = wgpu::SurfaceConfiguration {
@@ -212,7 +214,7 @@ impl State {
         // lighting buffers
         let light_uniforms = vec![
             LightUniform::new(
-                Vector3::new(0.1, 0.2, 1.0), 
+                Vector3::new(1.0, 0.0, 0.0), 
                 Point3::new(-2.7181466, 13.20014, -3.9281557), 
 Vector3::new(0.53910136, -0.6668692, 0.51444644)
             ),
@@ -226,7 +228,7 @@ Vector3::new(0.7537466, -0.48293236, -0.44569337)
         // let light_object_bind_group_layout = 
 
         let mut light_handler = light::LightHandler::new(
-            resources::load_light_obj("C:/Users/kasp9/rust/renderer/res/ball.obj", &device).await.unwrap(),
+            resources::load_light_obj("C:/Users/kaspe/rust/renderer/res/ball.obj", &device).await.unwrap(),
             LightObjectPipeline::create(
                 &device, 
                 &config,

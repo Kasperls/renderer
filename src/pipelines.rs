@@ -18,7 +18,7 @@ pub trait PipelineTrait {
     {
 
         // let shader = PipelineTrait::create_shader(device, "shaders/lowres.wgsl");
-        let path = format!("C:/Users/kasp9/rust/renderer/src/{}.wgsl", shader_name);
+        let path = format!("C:/Users/kaspe/rust/renderer/src/{}.wgsl", shader_name);
         let data = std::fs::read_to_string(path).expect("could not open file");
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some(format!("{} Shader", shader_name).as_str()),
@@ -138,7 +138,7 @@ impl PipelineTrait for LightObjectPipeline {
         where Self: Sized, {
 
         // let shader = PipelineTrait::create_shader(device, "shaders/lowres.wgsl");
-        let path = format!("C:/Users/kasp9/rust/renderer/src/{}.wgsl", shader_name);
+        let path = format!("C:/Users/kaspe/rust/renderer/src/{}.wgsl", shader_name);
         let data = std::fs::read_to_string(path).expect("could not open file");
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some(format!("{} Shader", shader_name).as_str()),
